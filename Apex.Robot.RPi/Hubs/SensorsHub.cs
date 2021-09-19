@@ -11,15 +11,19 @@ namespace Apex.Robot.RPi.Hubs
     {
         private readonly ISensorsService _sensorsService;
         private readonly IPredictionsService _predictionsService;
+        private readonly IMotorsService _motorsService;
+        private DateTime _sleepTo;
         private static bool _isStreaming;
         private readonly ApiSettings _settings;
         public static string IsAlarm { get; set; }
 
-        public SensorsHub(ISensorsService sensorsService, IPredictionsService predictionsService, ApiSettings settings)
+        public SensorsHub(ISensorsService sensorsService, IPredictionsService predictionsService, IMotorsService motorsService, ApiSettings settings)
         {
+            _motorsService = motorsService;
             _sensorsService = sensorsService;
             _predictionsService = predictionsService;
             _settings = settings;
+            _sleepTo = DateTime.Now;
         }
 
         public async Task StartSensorsStreaming()
@@ -75,6 +79,13 @@ namespace Apex.Robot.RPi.Hubs
 
                         var prediction = _predictionsService.Predict(reading);
                         reading.IsAlarm = prediction.Prediction;
+
+                        if (reading.IsAlarm) 
+                        {
+                            Console.WriteLine($"Now: {DateTime.Now} Sleep motors until: {_sleepTo}");
+                            _motorsService.RunAway(_sleepTo);
+                            _sleepTo = DateTime.Now.AddSeconds(2);
+                        }
 
                         //TODO change with logging
                         Console.WriteLine(reading);

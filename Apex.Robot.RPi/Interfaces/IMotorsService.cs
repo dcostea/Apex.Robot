@@ -1,4 +1,6 @@
-﻿namespace Apex.Robot.RPi.Interfaces
+﻿using System;
+
+namespace Apex.Robot.RPi.Interfaces
 {
     public interface IMotorsService
     {
@@ -8,5 +10,6 @@
         void FullStop();
         void TurnLeft(int milliseconds);
         void TurnRight(int milliseconds);
+        void RunAway(DateTime sleepTo);
     }
 }

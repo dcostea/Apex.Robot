@@ -87,5 +87,17 @@ namespace Apex.Robot.RPi.Services
 
             Backward(500);
         }
+
+        public void RunAway(DateTime sleepTo) 
+        {
+            if (DateTime.Now > sleepTo)
+            {
+                Backward(500);
+
+                TurnLeft(300);
+
+                Forward(500);
+            }
+        }
     }
 }
