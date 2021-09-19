@@ -135,8 +135,8 @@ namespace Apex.Robot.RPi.Services
         public double ReadInfrared()
         {
             gpioController.OpenPin(_settings.InfraredPin, PinMode.Input);
-
             var infrared = gpioController.Read(_settings.InfraredPin);
+            gpioController.ClosePin(_settings.InfraredPin);
 
             return infrared == PinValue.High ? 1 : 0;
         }

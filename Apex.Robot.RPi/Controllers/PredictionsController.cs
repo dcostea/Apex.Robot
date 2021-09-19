@@ -24,10 +24,10 @@ public class PredictionsController : ControllerBase
         return Ok("model trained");
     }
 
-    [HttpGet("predict")]
-    public IActionResult Predict()
+    [HttpPost("predict")]
+    public IActionResult Predict(ModelInput reading)
     {
-        var prediction = _service.Predict();
+        var prediction = _service.Predict(reading);
 
         return Ok(prediction);
     }

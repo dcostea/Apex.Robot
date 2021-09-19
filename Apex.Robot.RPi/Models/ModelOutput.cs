@@ -5,8 +5,10 @@ namespace Apex.Robot.RPi.Models;
 public class ModelOutput
 {
     [ColumnName("PredictedLabel")]
-    public string PredictedLabel { get; set; }
+    public bool Prediction { get; set; }
 
-    [ColumnName("Score")]
-    public float[] Score { get; set; }
+    public float Score { get; set; }
+
+    // The probability calculated by calibrating the score of having true as the label.
+    public float Probability { get; set; }
 }

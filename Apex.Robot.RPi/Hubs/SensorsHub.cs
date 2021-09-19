@@ -10,13 +10,15 @@ namespace Apex.Robot.RPi.Hubs
     public class SensorsHub : Hub
     {
         private readonly ISensorsService _sensorsService;
+        private readonly IPredictionsService _predictionsService;
         private static bool _isStreaming;
         private readonly ApiSettings _settings;
         public static string IsAlarm { get; set; }
 
-        public SensorsHub(ISensorsService sensorsService, ApiSettings settings)
+        public SensorsHub(ISensorsService sensorsService, IPredictionsService predictionsService, ApiSettings settings)
         {
             _sensorsService = sensorsService;
+            _predictionsService = predictionsService;
             _settings = settings;
         }
 
@@ -32,13 +34,13 @@ namespace Apex.Robot.RPi.Hubs
             await Clients.All.SendAsync("sensorsStreamingStopped");
         }
 
-        public ChannelReader<Reading> SensorsCaptureLoop()
+        public ChannelReader<ModelInput> SensorsCaptureLoop()
         {
-            var channel = Channel.CreateUnbounded<Reading>();
+            var channel = Channel.CreateUnbounded<ModelInput>();
             _ = WriteToChannel(channel.Writer);
             return channel.Reader;
 
-            async Task WriteToChannel(ChannelWriter<Reading> writer)
+            async Task WriteToChannel(ChannelWriter<ModelInput> writer)
             {
                 while (_isStreaming)
                 {
@@ -52,9 +54,8 @@ namespace Apex.Robot.RPi.Hubs
                         //await Task.Delay(_settings.ReadingDelay);
                         Console.WriteLine($"temperature {temperature}");
 
-                        ////////var infrared = _sensorsService.ReadInfrared();
+                        var infrared = _sensorsService.ReadInfrared();
                         //await Task.Delay(_settings.ReadingDelay);
-                        var infrared = 1;
                         Console.WriteLine($"infrared {infrared}");
 
                         var distance = _sensorsService.ReadDistance();
@@ -63,17 +64,23 @@ namespace Apex.Robot.RPi.Hubs
 
                         var createdAt = DateTime.Now.ToString("yyyyMMddhhmmssff");
 
-                        var reading = new Reading
+                        var reading = new ModelInput
                         {
-                            Humidity = humidity,
-                            Temperature = temperature,
-                            Infrared = infrared,
-                            Distance = distance,
-                            CreatedAt = createdAt,
-                            IsAlarm = IsAlarm ?? string.Empty
+                            Humidity = (float)humidity,
+                            Temperature = (float)temperature,
+                            Infrared = (float)infrared,
+                            Distance = (float)distance,
+                            CreatedAt = createdAt
                         };
 
+                        var prediction = _predictionsService.Predict(reading);
+                        reading.IsAlarm = prediction.Prediction;
+
+                        //TODO change with logging
+                        Console.WriteLine(reading);
+
                         await writer.WriteAsync(reading);
+                        //TODO replace with ToString
                         await Clients.All.SendAsync("sensorsDataCaptured", $"{humidity}, {temperature}, {infrared}, {distance}, {createdAt}, {IsAlarm}");
 
                         await Task.Delay(_settings.ReadingDelay);

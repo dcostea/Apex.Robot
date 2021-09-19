@@ -5,7 +5,7 @@ VisualStudioVersion = 17.0.31710.8
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Apex.Robot.RPi", "Apex.Robot.RPi\Apex.Robot.RPi.csproj", "{C0342C75-6EA0-4685-A1E9-A1245EE1C2BF}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Apex.Robot.Vision", "Apex.Robot.Vision\Apex.Robot.Vision.csproj", "{A92286AC-3118-4F5B-B99E-A0368379C848}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Apex.Robot.Vision.API", "Apex.Robot.Vision.API\Apex.Robot.Vision.API.csproj", "{A92286AC-3118-4F5B-B99E-A0368379C848}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
