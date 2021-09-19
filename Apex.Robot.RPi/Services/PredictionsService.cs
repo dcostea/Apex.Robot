@@ -2,6 +2,7 @@
 using Apex.Robot.RPi.Models;
 using Microsoft.ML;
 using Microsoft.ML.Trainers.FastTree;
+using Serilog;
 
 namespace Apex.Robot.RPi.Services
 {
@@ -52,7 +53,7 @@ namespace Apex.Robot.RPi.Services
             var predictor = mlContext.Model.CreatePredictionEngine<ModelInput, ModelOutput>(model);
             var predicted = predictor.Predict(sampleData);
 
-            System.Console.WriteLine(predicted.Prediction);
+            Log.Debug($"Prediction: {predicted.Prediction}");
 
             return predicted;
         }
@@ -92,7 +93,7 @@ namespace Apex.Robot.RPi.Services
             var predictor = mlContext.Model.CreatePredictionEngine<ModelInput, ModelOutput>(model);
             var predicted = predictor.Predict(reading);
 
-            System.Console.WriteLine($"Prediction for {reading} is *** {predicted.Prediction} ***");
+            Log.Debug($"Prediction for {reading} is *** {predicted.Prediction} ***");
 
             return predicted;
         }

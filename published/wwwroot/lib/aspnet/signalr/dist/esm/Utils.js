@@ -57,20 +57,20 @@ var Arg = /** @class */ (function () {
 export { Arg };
 /** @private */
 export function getDataDetail(data, includeContent) {
-    var detail = "";
+    var length = null;
     if (isArrayBuffer(data)) {
-        detail = "Binary data of length " + data.byteLength;
+        length = "Binary data of length " + data.byteLength;
         if (includeContent) {
-            detail += ". Content: '" + formatArrayBuffer(data) + "'";
+            length += ". Content: '" + formatArrayBuffer(data) + "'";
         }
     }
     else if (typeof data === "string") {
-        detail = "String data of length " + data.length;
+        length = "String data of length " + data.length;
         if (includeContent) {
-            detail += ". Content: '" + data + "'";
+            length += ". Content: '" + data + "'.";
         }
     }
-    return detail;
+    return length;
 }
 /** @private */
 export function formatArrayBuffer(data) {
@@ -84,23 +84,13 @@ export function formatArrayBuffer(data) {
     // Trim of trailing space.
     return str.substr(0, str.length - 1);
 }
-// Also in signalr-protocol-msgpack/Utils.ts
-/** @private */
-export function isArrayBuffer(val) {
-    return val && typeof ArrayBuffer !== "undefined" &&
-        (val instanceof ArrayBuffer ||
-            // Sometimes we get an ArrayBuffer that doesn't satisfy instanceof
-            (val.constructor && val.constructor.name === "ArrayBuffer"));
-}
 /** @private */
 export function sendMessage(logger, transportName, httpClient, url, accessTokenFactory, content, logMessageContent) {
     return __awaiter(this, void 0, void 0, function () {
-        var _a, headers, token, responseType, response;
+        var _a, headers, token, response;
         return __generator(this, function (_b) {
             switch (_b.label) {
-                case 0:
-                    if (!accessTokenFactory) return [3 /*break*/, 2];
-                    return [4 /*yield*/, accessTokenFactory()];
+                case 0: return [4 /*yield*/, accessTokenFactory()];
                 case 1:
                     token = _b.sent();
                     if (token) {
@@ -108,16 +98,12 @@ export function sendMessage(logger, transportName, httpClient, url, accessTokenF
                             _a["Authorization"] = "Bearer " + token,
                             _a);
                     }
-                    _b.label = 2;
-                case 2:
                     logger.log(LogLevel.Trace, "(" + transportName + " transport) sending data. " + getDataDetail(content, logMessageContent) + ".");
-                    responseType = isArrayBuffer(content) ? "arraybuffer" : "text";
                     return [4 /*yield*/, httpClient.post(url, {
                             content: content,
                             headers: headers,
-                            responseType: responseType,
                         })];
-                case 3:
+                case 2:
                     response = _b.sent();
                     logger.log(LogLevel.Trace, "(" + transportName + " transport) request complete. Response status: " + response.statusCode + ".");
                     return [2 /*return*/];
@@ -140,8 +126,9 @@ export function createLogger(logger) {
 }
 /** @private */
 var Subject = /** @class */ (function () {
-    function Subject() {
+    function Subject(cancelCallback) {
         this.observers = [];
+        this.cancelCallback = cancelCallback;
     }
     Subject.prototype.next = function (item) {
         for (var _i = 0, _a = this.observers; _i < _a.length; _i++) {
@@ -183,7 +170,7 @@ var SubjectSubscription = /** @class */ (function () {
         if (index > -1) {
             this.subject.observers.splice(index, 1);
         }
-        if (this.subject.observers.length === 0 && this.subject.cancelCallback) {
+        if (this.subject.observers.length === 0) {
             this.subject.cancelCallback().catch(function (_) { });
         }
     };
@@ -200,17 +187,17 @@ var ConsoleLogger = /** @class */ (function () {
             switch (logLevel) {
                 case LogLevel.Critical:
                 case LogLevel.Error:
-                    console.error("[" + new Date().toISOString() + "] " + LogLevel[logLevel] + ": " + message);
+                    console.error(LogLevel[logLevel] + ": " + message);
                     break;
                 case LogLevel.Warning:
-                    console.warn("[" + new Date().toISOString() + "] " + LogLevel[logLevel] + ": " + message);
+                    console.warn(LogLevel[logLevel] + ": " + message);
                     break;
                 case LogLevel.Information:
-                    console.info("[" + new Date().toISOString() + "] " + LogLevel[logLevel] + ": " + message);
+                    console.info(LogLevel[logLevel] + ": " + message);
                     break;
                 default:
                     // console.debug only goes to attached debuggers in Node, so we use console.log for Trace and Debug
-                    console.log("[" + new Date().toISOString() + "] " + LogLevel[logLevel] + ": " + message);
+                    console.log(LogLevel[logLevel] + ": " + message);
                     break;
             }
         }
@@ -218,4 +205,11 @@ var ConsoleLogger = /** @class */ (function () {
     return ConsoleLogger;
 }());
 export { ConsoleLogger };
+/** @private */
+export function isArrayBuffer(val) {
+    return val && typeof ArrayBuffer !== "undefined" &&
+        (val instanceof ArrayBuffer ||
+            // Sometimes we get an ArrayBuffer that doesn't satisfy instanceof
+            (val.constructor && val.constructor.name === "ArrayBuffer"));
+}
 //# sourceMappingURL=Utils.js.map

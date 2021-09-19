@@ -8,6 +8,7 @@ using UnitsNet;
 using Iot.Device.DHTxx;
 using Apex.Robot.RPi.Interfaces;
 using Apex.Robot.RPi.Models;
+using Serilog;
 
 namespace Apex.Robot.RPi.Services
 {
@@ -27,7 +28,7 @@ namespace Apex.Robot.RPi.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message);
+                Log.Error(ex.Message);
             }
         }
 
@@ -138,7 +139,7 @@ namespace Apex.Robot.RPi.Services
             var infrared = gpioController.Read(_settings.InfraredPin);
             gpioController.ClosePin(_settings.InfraredPin);
 
-            return infrared == PinValue.High ? 1 : 0;
+            return infrared == PinValue.High ? 0 : 1;
         }
     }
 }

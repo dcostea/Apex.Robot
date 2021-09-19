@@ -1,6 +1,7 @@
 ﻿using Apex.Robot.RPi.Interfaces;
 using Apex.Robot.RPi.Models;
 using Microsoft.AspNetCore.SignalR;
+using Serilog;
 using System;
 using System.Threading.Channels;
 using System.Threading.Tasks;
@@ -52,19 +53,19 @@ namespace Apex.Robot.RPi.Hubs
                     {
                         var humidity = _sensorsService.ReadHumidity();
                         //await Task.Delay(_settings.ReadingDelay);
-                        Console.WriteLine($"humidity {humidity}");
+                        Log.Debug($"humidity {humidity}");
 
                         var temperature = _sensorsService.ReadTemperature();
                         //await Task.Delay(_settings.ReadingDelay);
-                        Console.WriteLine($"temperature {temperature}");
+                        Log.Debug($"temperature {temperature}");
 
                         var infrared = _sensorsService.ReadInfrared();
                         //await Task.Delay(_settings.ReadingDelay);
-                        Console.WriteLine($"infrared {infrared}");
+                        Log.Debug($"infrared {infrared}");
 
                         var distance = _sensorsService.ReadDistance();
                         //await Task.Delay(_settings.ReadingDelay);
-                        Console.WriteLine($"distance {distance}");
+                        Log.Debug($"distance {distance}");
 
                         var createdAt = DateTime.Now.ToString("yyyyMMddhhmmssff");
 
@@ -82,13 +83,13 @@ namespace Apex.Robot.RPi.Hubs
 
                         if (reading.IsAlarm) 
                         {
-                            Console.WriteLine($"Now: {DateTime.Now} Sleep motors until: {_sleepTo}");
+                            Log.Debug($"Now: {DateTime.Now} Sleep motors until: {_sleepTo}");
                             _motorsService.RunAway(_sleepTo);
                             _sleepTo = DateTime.Now.AddSeconds(2);
                         }
 
                         //TODO change with logging
-                        Console.WriteLine(reading);
+                        Log.Debug(reading.ToString());
 
                         await writer.WriteAsync(reading);
                         //TODO replace with ToString
@@ -98,7 +99,7 @@ namespace Apex.Robot.RPi.Hubs
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine(ex.Message);
+                        Log.Error(ex.Message);
                         await Clients.All.SendAsync("sensorsDataNotCaptured");
                     }
 

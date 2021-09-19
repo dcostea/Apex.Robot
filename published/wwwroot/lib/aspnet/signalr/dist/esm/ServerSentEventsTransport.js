@@ -40,14 +40,11 @@ import { TransferFormat } from "./ITransport";
 import { Arg, getDataDetail, sendMessage } from "./Utils";
 /** @private */
 var ServerSentEventsTransport = /** @class */ (function () {
-    function ServerSentEventsTransport(httpClient, accessTokenFactory, logger, logMessageContent, eventSourceConstructor) {
+    function ServerSentEventsTransport(httpClient, accessTokenFactory, logger, logMessageContent) {
         this.httpClient = httpClient;
-        this.accessTokenFactory = accessTokenFactory;
+        this.accessTokenFactory = accessTokenFactory || (function () { return null; });
         this.logger = logger;
         this.logMessageContent = logMessageContent;
-        this.eventSourceConstructor = eventSourceConstructor;
-        this.onreceive = null;
-        this.onclose = null;
     }
     ServerSentEventsTransport.prototype.connect = function (url, transferFormat) {
         return __awaiter(this, void 0, void 0, function () {
@@ -59,66 +56,58 @@ var ServerSentEventsTransport = /** @class */ (function () {
                         Arg.isRequired(url, "url");
                         Arg.isRequired(transferFormat, "transferFormat");
                         Arg.isIn(transferFormat, TransferFormat, "transferFormat");
-                        this.logger.log(LogLevel.Trace, "(SSE transport) Connecting.");
-                        // set url before accessTokenFactory because this.url is only for send and we set the auth header instead of the query string for send
-                        this.url = url;
-                        if (!this.accessTokenFactory) return [3 /*break*/, 2];
+                        if (typeof (EventSource) === "undefined") {
+                            throw new Error("'EventSource' is not supported in your environment.");
+                        }
+                        this.logger.log(LogLevel.Trace, "(SSE transport) Connecting");
                         return [4 /*yield*/, this.accessTokenFactory()];
                     case 1:
                         token = _a.sent();
                         if (token) {
                             url += (url.indexOf("?") < 0 ? "?" : "&") + ("access_token=" + encodeURIComponent(token));
                         }
-                        _a.label = 2;
-                    case 2: return [2 /*return*/, new Promise(function (resolve, reject) {
-                            var opened = false;
-                            if (transferFormat !== TransferFormat.Text) {
-                                reject(new Error("The Server-Sent Events transport only supports the 'Text' transfer format"));
-                                return;
-                            }
-                            var eventSource;
-                            if (typeof window !== "undefined") {
-                                eventSource = new _this.eventSourceConstructor(url, { withCredentials: true });
-                            }
-                            else {
-                                // Non-browser passes cookies via the dictionary
-                                var cookies = _this.httpClient.getCookieString(url);
-                                eventSource = new _this.eventSourceConstructor(url, { withCredentials: true, headers: { Cookie: cookies } });
-                            }
-                            try {
-                                eventSource.onmessage = function (e) {
-                                    if (_this.onreceive) {
-                                        try {
-                                            _this.logger.log(LogLevel.Trace, "(SSE transport) data received. " + getDataDetail(e.data, _this.logMessageContent) + ".");
-                                            _this.onreceive(e.data);
+                        this.url = url;
+                        return [2 /*return*/, new Promise(function (resolve, reject) {
+                                var opened = false;
+                                if (transferFormat !== TransferFormat.Text) {
+                                    reject(new Error("The Server-Sent Events transport only supports the 'Text' transfer format"));
+                                }
+                                var eventSource = new EventSource(url, { withCredentials: true });
+                                try {
+                                    eventSource.onmessage = function (e) {
+                                        if (_this.onreceive) {
+                                            try {
+                                                _this.logger.log(LogLevel.Trace, "(SSE transport) data received. " + getDataDetail(e.data, _this.logMessageContent) + ".");
+                                                _this.onreceive(e.data);
+                                            }
+                                            catch (error) {
+                                                if (_this.onclose) {
+                                                    _this.onclose(error);
+                                                }
+                                                return;
+                                            }
                                         }
-                                        catch (error) {
+                                    };
+                                    eventSource.onerror = function (e) {
+                                        var error = new Error(e.message || "Error occurred");
+                                        if (opened) {
                                             _this.close(error);
-                                            return;
                                         }
-                                    }
-                                };
-                                eventSource.onerror = function (e) {
-                                    var error = new Error(e.data || "Error occurred");
-                                    if (opened) {
-                                        _this.close(error);
-                                    }
-                                    else {
-                                        reject(error);
-                                    }
-                                };
-                                eventSource.onopen = function () {
-                                    _this.logger.log(LogLevel.Information, "SSE connected to " + _this.url);
-                                    _this.eventSource = eventSource;
-                                    opened = true;
-                                    resolve();
-                                };
-                            }
-                            catch (e) {
-                                reject(e);
-                                return;
-                            }
-                        })];
+                                        else {
+                                            reject(error);
+                                        }
+                                    };
+                                    eventSource.onopen = function () {
+                                        _this.logger.log(LogLevel.Information, "SSE connected to " + _this.url);
+                                        _this.eventSource = eventSource;
+                                        opened = true;
+                                        resolve();
+                                    };
+                                }
+                                catch (e) {
+                                    return Promise.reject(e);
+                                }
+                            })];
                 }
             });
         });
@@ -140,7 +129,7 @@ var ServerSentEventsTransport = /** @class */ (function () {
     ServerSentEventsTransport.prototype.close = function (e) {
         if (this.eventSource) {
             this.eventSource.close();
-            this.eventSource = undefined;
+            this.eventSource = null;
             if (this.onclose) {
                 this.onclose(e);
             }

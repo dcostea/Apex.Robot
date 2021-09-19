@@ -42,14 +42,10 @@ var ITransport_1 = require("./ITransport");
 var Utils_1 = require("./Utils");
 /** @private */
 var WebSocketTransport = /** @class */ (function () {
-    function WebSocketTransport(httpClient, accessTokenFactory, logger, logMessageContent, webSocketConstructor) {
+    function WebSocketTransport(accessTokenFactory, logger, logMessageContent) {
         this.logger = logger;
-        this.accessTokenFactory = accessTokenFactory;
+        this.accessTokenFactory = accessTokenFactory || (function () { return null; });
         this.logMessageContent = logMessageContent;
-        this.webSocketConstructor = webSocketConstructor;
-        this.httpClient = httpClient;
-        this.onreceive = null;
-        this.onclose = null;
     }
     WebSocketTransport.prototype.connect = function (url, transferFormat) {
         return __awaiter(this, void 0, void 0, function () {
@@ -61,62 +57,56 @@ var WebSocketTransport = /** @class */ (function () {
                         Utils_1.Arg.isRequired(url, "url");
                         Utils_1.Arg.isRequired(transferFormat, "transferFormat");
                         Utils_1.Arg.isIn(transferFormat, ITransport_1.TransferFormat, "transferFormat");
-                        this.logger.log(ILogger_1.LogLevel.Trace, "(WebSockets transport) Connecting.");
-                        if (!this.accessTokenFactory) return [3 /*break*/, 2];
+                        if (typeof (WebSocket) === "undefined") {
+                            throw new Error("'WebSocket' is not supported in your environment.");
+                        }
+                        this.logger.log(ILogger_1.LogLevel.Trace, "(WebSockets transport) Connecting");
                         return [4 /*yield*/, this.accessTokenFactory()];
                     case 1:
                         token = _a.sent();
                         if (token) {
                             url += (url.indexOf("?") < 0 ? "?" : "&") + ("access_token=" + encodeURIComponent(token));
                         }
-                        _a.label = 2;
-                    case 2: return [2 /*return*/, new Promise(function (resolve, reject) {
-                            url = url.replace(/^http/, "ws");
-                            var webSocket;
-                            var cookies = _this.httpClient.getCookieString(url);
-                            if (typeof window === "undefined" && cookies) {
-                                // Only pass cookies when in non-browser environments
-                                webSocket = new _this.webSocketConstructor(url, undefined, {
-                                    headers: {
-                                        Cookie: "" + cookies,
-                                    },
-                                });
-                            }
-                            if (!webSocket) {
-                                // Chrome is not happy with passing 'undefined' as protocol
-                                webSocket = new _this.webSocketConstructor(url);
-                            }
-                            if (transferFormat === ITransport_1.TransferFormat.Binary) {
-                                webSocket.binaryType = "arraybuffer";
-                            }
-                            // tslint:disable-next-line:variable-name
-                            webSocket.onopen = function (_event) {
-                                _this.logger.log(ILogger_1.LogLevel.Information, "WebSocket connected to " + url + ".");
-                                _this.webSocket = webSocket;
-                                resolve();
-                            };
-                            webSocket.onerror = function (event) {
-                                var error = null;
-                                // ErrorEvent is a browser only type we need to check if the type exists before using it
-                                if (typeof ErrorEvent !== "undefined" && event instanceof ErrorEvent) {
-                                    error = event.error;
+                        return [2 /*return*/, new Promise(function (resolve, reject) {
+                                url = url.replace(/^http/, "ws");
+                                var webSocket = new WebSocket(url);
+                                if (transferFormat === ITransport_1.TransferFormat.Binary) {
+                                    webSocket.binaryType = "arraybuffer";
                                 }
-                                reject(error);
-                            };
-                            webSocket.onmessage = function (message) {
-                                _this.logger.log(ILogger_1.LogLevel.Trace, "(WebSockets transport) data received. " + Utils_1.getDataDetail(message.data, _this.logMessageContent) + ".");
-                                if (_this.onreceive) {
-                                    _this.onreceive(message.data);
-                                }
-                            };
-                            webSocket.onclose = function (event) { return _this.close(event); };
-                        })];
+                                // tslint:disable-next-line:variable-name
+                                webSocket.onopen = function (_event) {
+                                    _this.logger.log(ILogger_1.LogLevel.Information, "WebSocket connected to " + url);
+                                    _this.webSocket = webSocket;
+                                    resolve();
+                                };
+                                webSocket.onerror = function (event) {
+                                    reject(event.error);
+                                };
+                                webSocket.onmessage = function (message) {
+                                    _this.logger.log(ILogger_1.LogLevel.Trace, "(WebSockets transport) data received. " + Utils_1.getDataDetail(message.data, _this.logMessageContent) + ".");
+                                    if (_this.onreceive) {
+                                        _this.onreceive(message.data);
+                                    }
+                                };
+                                webSocket.onclose = function (event) {
+                                    // webSocket will be null if the transport did not start successfully
+                                    _this.logger.log(ILogger_1.LogLevel.Trace, "(WebSockets transport) socket closed.");
+                                    if (_this.onclose) {
+                                        if (event.wasClean === false || event.code !== 1000) {
+                                            _this.onclose(new Error("Websocket closed with status code: " + event.code + " (" + event.reason + ")"));
+                                        }
+                                        else {
+                                            _this.onclose();
+                                        }
+                                    }
+                                };
+                            })];
                 }
             });
         });
     };
     WebSocketTransport.prototype.send = function (data) {
-        if (this.webSocket && this.webSocket.readyState === this.webSocketConstructor.OPEN) {
+        if (this.webSocket && this.webSocket.readyState === WebSocket.OPEN) {
             this.logger.log(ILogger_1.LogLevel.Trace, "(WebSockets transport) sending data. " + Utils_1.getDataDetail(data, this.logMessageContent) + ".");
             this.webSocket.send(data);
             return Promise.resolve();
@@ -125,29 +115,10 @@ var WebSocketTransport = /** @class */ (function () {
     };
     WebSocketTransport.prototype.stop = function () {
         if (this.webSocket) {
-            // Clear websocket handlers because we are considering the socket closed now
-            this.webSocket.onclose = function () { };
-            this.webSocket.onmessage = function () { };
-            this.webSocket.onerror = function () { };
             this.webSocket.close();
-            this.webSocket = undefined;
-            // Manually invoke onclose callback inline so we know the HttpConnection was closed properly before returning
-            // This also solves an issue where websocket.onclose could take 18+ seconds to trigger during network disconnects
-            this.close(undefined);
+            this.webSocket = null;
         }
         return Promise.resolve();
-    };
-    WebSocketTransport.prototype.close = function (event) {
-        // webSocket will be null if the transport did not start successfully
-        this.logger.log(ILogger_1.LogLevel.Trace, "(WebSockets transport) socket closed.");
-        if (this.onclose) {
-            if (event && (event.wasClean === false || event.code !== 1000)) {
-                this.onclose(new Error("WebSocket closed with status code: " + event.code + " (" + event.reason + ")."));
-            }
-            else {
-                this.onclose();
-            }
-        }
     };
     return WebSocketTransport;
 }());

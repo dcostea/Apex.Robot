@@ -1,7 +1,7 @@
 ﻿using Apex.Robot.RPi.Interfaces;
 using Apex.Robot.RPi.Models;
 using Iot.Device.Media;
-using System;
+using Serilog;
 using System.IO;
 
 namespace Apex.Robot.RPi.Services
@@ -23,7 +23,7 @@ namespace Apex.Robot.RPi.Services
             var device = VideoDevice.Create(settings);
             var stream = device.Capture();
 
-            Console.WriteLine("Image captured into capture.jpg");
+            Log.Debug("Image captured into capture.jpg");
 
             return StreamToByteArray(stream);
         }

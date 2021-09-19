@@ -1,6 +1,5 @@
 ﻿using Apex.Robot.RPi.Interfaces;
 using Apex.Robot.RPi.Models;
-using Apex.Robot.RPi.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Apex.Robot.RPi.Controllers

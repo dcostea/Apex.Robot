@@ -4,18 +4,12 @@ using Apex.Robot.RPi.Models;
 using Apex.Robot.RPi.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.HttpsPolicy;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using Serilog;
 
 namespace Apex.Robot.RPi
 {
@@ -31,6 +25,7 @@ namespace Apex.Robot.RPi
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            Log.Logger = new LoggerConfiguration().ReadFrom.Configuration(Configuration).CreateLogger();
             services.Configure<ApiSettings>(Configuration.GetSection("AppSettings"));
             services.AddSingleton(resolver => resolver.GetRequiredService<IOptions<ApiSettings>>().Value);
             services.AddSingleton<ICameraService, CameraService>();

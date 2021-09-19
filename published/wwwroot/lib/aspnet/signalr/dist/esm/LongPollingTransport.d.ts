@@ -7,20 +7,19 @@ export declare class LongPollingTransport implements ITransport {
     private readonly accessTokenFactory;
     private readonly logger;
     private readonly logMessageContent;
-    private readonly pollAbort;
-    private url?;
+    private url;
+    private pollAbort;
+    private shutdownTimer;
+    private shutdownTimeout;
     private running;
-    private receiving?;
-    private closeError?;
-    onreceive: ((data: string | ArrayBuffer) => void) | null;
-    onclose: ((error?: Error) => void) | null;
+    private stopped;
     readonly pollAborted: boolean;
-    constructor(httpClient: HttpClient, accessTokenFactory: (() => string | Promise<string>) | undefined, logger: ILogger, logMessageContent: boolean);
+    constructor(httpClient: HttpClient, accessTokenFactory: () => string | Promise<string>, logger: ILogger, logMessageContent: boolean, shutdownTimeout?: number);
     connect(url: string, transferFormat: TransferFormat): Promise<void>;
-    private getAccessToken;
     private updateHeaderToken;
     private poll;
     send(data: any): Promise<void>;
     stop(): Promise<void>;
-    private raiseOnClose;
+    onreceive: (data: string | ArrayBuffer) => void;
+    onclose: (error?: Error) => void;
 }

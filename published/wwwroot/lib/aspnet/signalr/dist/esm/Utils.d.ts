@@ -11,16 +11,14 @@ export declare function getDataDetail(data: any, includeContent: boolean): strin
 /** @private */
 export declare function formatArrayBuffer(data: ArrayBuffer): string;
 /** @private */
-export declare function isArrayBuffer(val: any): val is ArrayBuffer;
-/** @private */
-export declare function sendMessage(logger: ILogger, transportName: string, httpClient: HttpClient, url: string, accessTokenFactory: (() => string | Promise<string>) | undefined, content: string | ArrayBuffer, logMessageContent: boolean): Promise<void>;
+export declare function sendMessage(logger: ILogger, transportName: string, httpClient: HttpClient, url: string, accessTokenFactory: () => string | Promise<string>, content: string | ArrayBuffer, logMessageContent: boolean): Promise<void>;
 /** @private */
 export declare function createLogger(logger?: ILogger | LogLevel): ILogger;
 /** @private */
 export declare class Subject<T> implements IStreamResult<T> {
     observers: Array<IStreamSubscriber<T>>;
-    cancelCallback?: () => Promise<void>;
-    constructor();
+    cancelCallback: () => Promise<void>;
+    constructor(cancelCallback: () => Promise<void>);
     next(item: T): void;
     error(err: any): void;
     complete(): void;
@@ -39,3 +37,5 @@ export declare class ConsoleLogger implements ILogger {
     constructor(minimumLogLevel: LogLevel);
     log(logLevel: LogLevel, message: string): void;
 }
+/** @private */
+export declare function isArrayBuffer(val: any): val is ArrayBuffer;

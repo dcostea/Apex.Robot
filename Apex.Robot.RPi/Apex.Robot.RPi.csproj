@@ -8,15 +8,13 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.ML" Version="1.6.0" />
     <PackageReference Include="Microsoft.ML.FastTree" Version="1.6.0" />
+    <PackageReference Include="Serilog.AspNetCore" Version="4.1.0" />
+    <PackageReference Include="Serilog.Sinks.Console" Version="4.0.0" />
     <PackageReference Include="System.Device.Gpio" Version="1.5.0" />
     <PackageReference Include="Iot.Device.Bindings" Version="1.5.0" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="6.0.0-rc.1.21452.15" NoWarn="NU1605" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="6.0.0-rc.1.21452.15" NoWarn="NU1605" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.2.1" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="MachineLearning\" />
   </ItemGroup>
 
   <ItemGroup>

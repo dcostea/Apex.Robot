@@ -37,7 +37,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-var DefaultHttpClient_1 = require("./DefaultHttpClient");
+var HttpClient_1 = require("./HttpClient");
 var ILogger_1 = require("./ILogger");
 var ITransport_1 = require("./ITransport");
 var LongPollingTransport_1 = require("./LongPollingTransport");
@@ -45,15 +45,6 @@ var ServerSentEventsTransport_1 = require("./ServerSentEventsTransport");
 var Utils_1 = require("./Utils");
 var WebSocketTransport_1 = require("./WebSocketTransport");
 var MAX_REDIRECTS = 100;
-var WebSocketModule = null;
-var EventSourceModule = null;
-if (typeof window === "undefined" && typeof require !== "undefined") {
-    // In order to ignore the dynamic require in webpack builds we need to do this magic
-    // @ts-ignore: TS doesn't know about these names
-    var requireFunc = typeof __webpack_require__ === "function" ? __non_webpack_require__ : require;
-    WebSocketModule = requireFunc("ws");
-    EventSourceModule = requireFunc("eventsource");
-}
 /** @private */
 var HttpConnection = /** @class */ (function () {
     function HttpConnection(url, options) {
@@ -63,29 +54,11 @@ var HttpConnection = /** @class */ (function () {
         this.logger = Utils_1.createLogger(options.logger);
         this.baseUrl = this.resolveUrl(url);
         options = options || {};
+        options.accessTokenFactory = options.accessTokenFactory || (function () { return null; });
         options.logMessageContent = options.logMessageContent || false;
-        var isNode = typeof window === "undefined";
-        if (!isNode && typeof WebSocket !== "undefined" && !options.WebSocket) {
-            options.WebSocket = WebSocket;
-        }
-        else if (isNode && !options.WebSocket) {
-            if (WebSocketModule) {
-                options.WebSocket = WebSocketModule;
-            }
-        }
-        if (!isNode && typeof EventSource !== "undefined" && !options.EventSource) {
-            options.EventSource = EventSource;
-        }
-        else if (isNode && !options.EventSource) {
-            if (typeof EventSourceModule !== "undefined") {
-                options.EventSource = EventSourceModule;
-            }
-        }
-        this.httpClient = options.httpClient || new DefaultHttpClient_1.DefaultHttpClient(this.logger);
+        this.httpClient = options.httpClient || new HttpClient_1.DefaultHttpClient(this.logger);
         this.connectionState = 2 /* Disconnected */;
         this.options = options;
-        this.onreceive = null;
-        this.onclose = null;
     }
     HttpConnection.prototype.start = function (transferFormat) {
         transferFormat = transferFormat || ITransport_1.TransferFormat.Binary;
@@ -102,7 +75,6 @@ var HttpConnection = /** @class */ (function () {
         if (this.connectionState !== 1 /* Connected */) {
             throw new Error("Cannot send data if the connection is not in the 'Connected' State.");
         }
-        // Transport will not be null if state is connected
         return this.transport.send(data);
     };
     HttpConnection.prototype.stop = function (error) {
@@ -112,10 +84,6 @@ var HttpConnection = /** @class */ (function () {
                 switch (_a.label) {
                     case 0:
                         this.connectionState = 2 /* Disconnected */;
-                        // Set error as soon as possible otherwise there is a race between
-                        // the transport closing and providing an error and the error from a close message
-                        // We would prefer the close message error.
-                        this.stopError = error;
                         _a.label = 1;
                     case 1:
                         _a.trys.push([1, 3, , 4]);
@@ -128,10 +96,11 @@ var HttpConnection = /** @class */ (function () {
                         return [3 /*break*/, 4];
                     case 4:
                         if (!this.transport) return [3 /*break*/, 6];
+                        this.stopError = error;
                         return [4 /*yield*/, this.transport.stop()];
                     case 5:
                         _a.sent();
-                        this.transport = undefined;
+                        this.transport = null;
                         _a.label = 6;
                     case 6: return [2 /*return*/];
                 }
@@ -178,12 +147,6 @@ var HttpConnection = /** @class */ (function () {
                                         if (this_1.connectionState === 2 /* Disconnected */) {
                                             return [2 /*return*/, { value: void 0 }];
                                         }
-                                        if (negotiateResponse.error) {
-                                            throw Error(negotiateResponse.error);
-                                        }
-                                        if (negotiateResponse.ProtocolVersion) {
-                                            throw Error("Detected a connection attempt to an ASP.NET SignalR Server. This client only supports connecting to an ASP.NET Core SignalR Server. See https://aka.ms/signalr-core-differences for details.");
-                                        }
                                         if (negotiateResponse.url) {
                                             url = negotiateResponse.url;
                                         }
@@ -229,7 +192,7 @@ var HttpConnection = /** @class */ (function () {
                         e_2 = _a.sent();
                         this.logger.log(ILogger_1.LogLevel.Error, "Failed to start the connection: " + e_2);
                         this.connectionState = 2 /* Disconnected */;
-                        this.transport = undefined;
+                        this.transport = null;
                         throw e_2;
                     case 13: return [2 /*return*/];
                 }
@@ -238,12 +201,10 @@ var HttpConnection = /** @class */ (function () {
     };
     HttpConnection.prototype.getNegotiationResponse = function (url) {
         return __awaiter(this, void 0, void 0, function () {
-            var _a, headers, token, negotiateUrl, response, e_3;
+            var _a, token, headers, negotiateUrl, response, e_3;
             return __generator(this, function (_b) {
                 switch (_b.label) {
-                    case 0:
-                        if (!this.accessTokenFactory) return [3 /*break*/, 2];
-                        return [4 /*yield*/, this.accessTokenFactory()];
+                    case 0: return [4 /*yield*/, this.accessTokenFactory()];
                     case 1:
                         token = _b.sent();
                         if (token) {
@@ -251,36 +212,31 @@ var HttpConnection = /** @class */ (function () {
                                 _a["Authorization"] = "Bearer " + token,
                                 _a);
                         }
+                        negotiateUrl = this.resolveNegotiateUrl(url);
+                        this.logger.log(ILogger_1.LogLevel.Debug, "Sending negotiation request: " + negotiateUrl);
                         _b.label = 2;
                     case 2:
-                        negotiateUrl = this.resolveNegotiateUrl(url);
-                        this.logger.log(ILogger_1.LogLevel.Debug, "Sending negotiation request: " + negotiateUrl + ".");
-                        _b.label = 3;
-                    case 3:
-                        _b.trys.push([3, 5, , 6]);
+                        _b.trys.push([2, 4, , 5]);
                         return [4 /*yield*/, this.httpClient.post(negotiateUrl, {
                                 content: "",
                                 headers: headers,
                             })];
-                    case 4:
+                    case 3:
                         response = _b.sent();
                         if (response.statusCode !== 200) {
                             throw Error("Unexpected status code returned from negotiate " + response.statusCode);
                         }
                         return [2 /*return*/, JSON.parse(response.content)];
-                    case 5:
+                    case 4:
                         e_3 = _b.sent();
                         this.logger.log(ILogger_1.LogLevel.Error, "Failed to complete negotiation with the server: " + e_3);
                         throw e_3;
-                    case 6: return [2 /*return*/];
+                    case 5: return [2 /*return*/];
                 }
             });
         });
     };
     HttpConnection.prototype.createConnectUrl = function (url, connectionId) {
-        if (!connectionId) {
-            return url;
-        }
         return url + (url.indexOf("?") === -1 ? "?" : "&") + ("id=" + connectionId);
     };
     HttpConnection.prototype.createTransport = function (url, requestedTransport, negotiateResponse, requestedTransferFormat) {
@@ -301,7 +257,7 @@ var HttpConnection = /** @class */ (function () {
                         this.changeState(0 /* Connecting */, 1 /* Connected */);
                         return [2 /*return*/];
                     case 2:
-                        transports = negotiateResponse.availableTransports || [];
+                        transports = negotiateResponse.availableTransports;
                         _i = 0, transports_1 = transports;
                         _a.label = 3;
                     case 3:
@@ -311,7 +267,7 @@ var HttpConnection = /** @class */ (function () {
                         transport = this.resolveTransport(endpoint, requestedTransport, requestedTransferFormat);
                         if (!(typeof transport === "number")) return [3 /*break*/, 8];
                         this.transport = this.constructTransport(transport);
-                        if (!!negotiateResponse.connectionId) return [3 /*break*/, 5];
+                        if (!(negotiateResponse.connectionId === null)) return [3 /*break*/, 5];
                         return [4 /*yield*/, this.getNegotiationResponse(url)];
                     case 4:
                         negotiateResponse = _a.sent();
@@ -328,7 +284,7 @@ var HttpConnection = /** @class */ (function () {
                         ex_1 = _a.sent();
                         this.logger.log(ILogger_1.LogLevel.Error, "Failed to start the transport '" + ITransport_1.HttpTransportType[transport] + "': " + ex_1);
                         this.connectionState = 2 /* Disconnected */;
-                        negotiateResponse.connectionId = undefined;
+                        negotiateResponse.connectionId = null;
                         return [3 /*break*/, 8];
                     case 8:
                         _i++;
@@ -341,17 +297,11 @@ var HttpConnection = /** @class */ (function () {
     HttpConnection.prototype.constructTransport = function (transport) {
         switch (transport) {
             case ITransport_1.HttpTransportType.WebSockets:
-                if (!this.options.WebSocket) {
-                    throw new Error("'WebSocket' is not supported in your environment.");
-                }
-                return new WebSocketTransport_1.WebSocketTransport(this.httpClient, this.accessTokenFactory, this.logger, this.options.logMessageContent || false, this.options.WebSocket);
+                return new WebSocketTransport_1.WebSocketTransport(this.accessTokenFactory, this.logger, this.options.logMessageContent);
             case ITransport_1.HttpTransportType.ServerSentEvents:
-                if (!this.options.EventSource) {
-                    throw new Error("'EventSource' is not supported in your environment.");
-                }
-                return new ServerSentEventsTransport_1.ServerSentEventsTransport(this.httpClient, this.accessTokenFactory, this.logger, this.options.logMessageContent || false, this.options.EventSource);
+                return new ServerSentEventsTransport_1.ServerSentEventsTransport(this.httpClient, this.accessTokenFactory, this.logger, this.options.logMessageContent);
             case ITransport_1.HttpTransportType.LongPolling:
-                return new LongPollingTransport_1.LongPollingTransport(this.httpClient, this.accessTokenFactory, this.logger, this.options.logMessageContent || false);
+                return new LongPollingTransport_1.LongPollingTransport(this.httpClient, this.accessTokenFactory, this.logger, this.options.logMessageContent);
             default:
                 throw new Error("Unknown transport: " + transport + ".");
         }
@@ -365,12 +315,12 @@ var HttpConnection = /** @class */ (function () {
             var transferFormats = endpoint.transferFormats.map(function (s) { return ITransport_1.TransferFormat[s]; });
             if (transportMatches(requestedTransport, transport)) {
                 if (transferFormats.indexOf(requestedTransferFormat) >= 0) {
-                    if ((transport === ITransport_1.HttpTransportType.WebSockets && !this.options.WebSocket) ||
-                        (transport === ITransport_1.HttpTransportType.ServerSentEvents && !this.options.EventSource)) {
+                    if ((transport === ITransport_1.HttpTransportType.WebSockets && typeof WebSocket === "undefined") ||
+                        (transport === ITransport_1.HttpTransportType.ServerSentEvents && typeof EventSource === "undefined")) {
                         this.logger.log(ILogger_1.LogLevel.Debug, "Skipping transport '" + ITransport_1.HttpTransportType[transport] + "' because it is not supported in your environment.'");
                     }
                     else {
-                        this.logger.log(ILogger_1.LogLevel.Debug, "Selecting transport '" + ITransport_1.HttpTransportType[transport] + "'.");
+                        this.logger.log(ILogger_1.LogLevel.Debug, "Selecting transport '" + ITransport_1.HttpTransportType[transport] + "'");
                         return transport;
                     }
                 }
@@ -395,19 +345,24 @@ var HttpConnection = /** @class */ (function () {
         return false;
     };
     HttpConnection.prototype.stopConnection = function (error) {
-        this.transport = undefined;
-        // If we have a stopError, it takes precedence over the error from the transport
-        error = this.stopError || error;
-        if (error) {
-            this.logger.log(ILogger_1.LogLevel.Error, "Connection disconnected with error '" + error + "'.");
-        }
-        else {
-            this.logger.log(ILogger_1.LogLevel.Information, "Connection disconnected.");
-        }
-        this.connectionState = 2 /* Disconnected */;
-        if (this.onclose) {
-            this.onclose(error);
-        }
+        return __awaiter(this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                this.transport = null;
+                // If we have a stopError, it takes precedence over the error from the transport
+                error = this.stopError || error;
+                if (error) {
+                    this.logger.log(ILogger_1.LogLevel.Error, "Connection disconnected with error '" + error + "'.");
+                }
+                else {
+                    this.logger.log(ILogger_1.LogLevel.Information, "Connection disconnected.");
+                }
+                this.connectionState = 2 /* Disconnected */;
+                if (this.onclose) {
+                    this.onclose(error);
+                }
+                return [2 /*return*/];
+            });
+        });
     };
     HttpConnection.prototype.resolveUrl = function (url) {
         // startsWith is not supported in IE

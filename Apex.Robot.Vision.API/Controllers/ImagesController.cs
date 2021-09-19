@@ -2,14 +2,9 @@ using Apex.Robot.Vision.API.DeepLearning;
 using Apex.Robot.Vision.API.Helpers;
 using Apex.Robot.Vision.API.Models;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-using System;
 using System.Drawing;
 using System.Drawing.Imaging;
-using System.IO;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace Apex.Robot.Vision.API.Controllers
 {

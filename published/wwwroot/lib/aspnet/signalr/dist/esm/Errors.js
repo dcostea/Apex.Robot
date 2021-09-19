@@ -53,25 +53,4 @@ var TimeoutError = /** @class */ (function (_super) {
     return TimeoutError;
 }(Error));
 export { TimeoutError };
-/** Error thrown when an action is aborted. */
-var AbortError = /** @class */ (function (_super) {
-    __extends(AbortError, _super);
-    /** Constructs a new instance of {@link AbortError}.
-     *
-     * @param {string} errorMessage A descriptive error message.
-     */
-    function AbortError(errorMessage) {
-        var _newTarget = this.constructor;
-        if (errorMessage === void 0) { errorMessage = "An abort occurred."; }
-        var _this = this;
-        var trueProto = _newTarget.prototype;
-        _this = _super.call(this, errorMessage) || this;
-        // Workaround issue in Typescript compiler
-        // https://github.com/Microsoft/TypeScript/issues/13965#issuecomment-278570200
-        _this.__proto__ = trueProto;
-        return _this;
-    }
-    return AbortError;
-}(Error));
-export { AbortError };
 //# sourceMappingURL=Errors.js.map

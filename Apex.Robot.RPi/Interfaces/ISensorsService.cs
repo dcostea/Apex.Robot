@@ -1,6 +1,4 @@
-﻿using System.Threading.Tasks;
-
-namespace Apex.Robot.RPi.Interfaces
+﻿namespace Apex.Robot.RPi.Interfaces
 {
     public interface ISensorsService
     {

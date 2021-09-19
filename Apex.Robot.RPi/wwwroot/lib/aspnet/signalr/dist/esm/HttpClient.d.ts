@@ -1,4 +1,5 @@
 import { AbortSignal } from "./AbortController";
+import { ILogger } from "./ILogger";
 /** Represents an HTTP request. */
 export interface HttpRequest {
     /** The HTTP method to use for the request. */
@@ -21,8 +22,8 @@ export interface HttpRequest {
 /** Represents an HTTP response. */
 export declare class HttpResponse {
     readonly statusCode: number;
-    readonly statusText?: string | undefined;
-    readonly content?: string | ArrayBuffer | undefined;
+    readonly statusText?: string;
+    readonly content?: string | ArrayBuffer;
     /** Constructs a new instance of {@link @aspnet/signalr.HttpResponse} with the specified status code.
      *
      * @param {number} statusCode The status code of the response.
@@ -99,10 +100,12 @@ export declare abstract class HttpClient {
      * @returns {Promise<HttpResponse>} A Promise that resolves with an HttpResponse describing the response, or rejects with an Error indicating a failure.
      */
     abstract send(request: HttpRequest): Promise<HttpResponse>;
-    /** Gets all cookies that apply to the specified URL.
-     *
-     * @param url The URL that the cookies are valid for.
-     * @returns {string} A string containing all the key-value cookie pairs for the specified URL.
-     */
-    getCookieString(url: string): string;
+}
+/** Default implementation of {@link @aspnet/signalr.HttpClient}. */
+export declare class DefaultHttpClient extends HttpClient {
+    private readonly logger;
+    /** Creates a new instance of the {@link @aspnet/signalr.DefaultHttpClient}, using the provided {@link @aspnet/signalr.ILogger} to log messages. */
+    constructor(logger: ILogger);
+    /** @inheritDoc */
+    send(request: HttpRequest): Promise<HttpResponse>;
 }

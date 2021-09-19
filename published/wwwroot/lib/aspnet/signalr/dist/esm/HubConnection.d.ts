@@ -1,14 +1,6 @@
 import { IStreamResult } from "./Stream";
-/** Describes the current state of the {@link HubConnection} to the server. */
-export declare enum HubConnectionState {
-    /** The hub connection is disconnected. */
-    Disconnected = 0,
-    /** The hub connection is connected. */
-    Connected = 1
-}
 /** Represents a connection to a SignalR Hub. */
 export declare class HubConnection {
-    private readonly cachedPingMessage;
     private readonly connection;
     private readonly logger;
     private protocol;
@@ -17,27 +9,15 @@ export declare class HubConnection {
     private methods;
     private id;
     private closedCallbacks;
-    private receivedHandshakeResponse;
-    private handshakeResolver;
-    private handshakeRejecter;
-    private connectionState;
     private timeoutHandle?;
-    private pingServerHandle?;
+    private receivedHandshakeResponse;
     /** The server timeout in milliseconds.
      *
      * If this timeout elapses without receiving any messages from the server, the connection will be terminated with an error.
      * The default timeout value is 30,000 milliseconds (30 seconds).
      */
     serverTimeoutInMilliseconds: number;
-    /** Default interval at which to ping the server.
-     *
-     * The default value is 15,000 milliseconds (15 seconds).
-     * Allows the server to detect hard disconnects (like when a client unplugs their computer).
-     */
-    keepAliveIntervalInMilliseconds: number;
     private constructor();
-    /** Indicates the state of the {@link HubConnection} to the server. */
-    readonly state: HubConnectionState;
     /** Starts the connection.
      *
      * @returns {Promise<void>} A Promise that resolves when the connection has been successfully established, or rejects with an error.
@@ -56,7 +36,6 @@ export declare class HubConnection {
      * @returns {IStreamResult<T>} An object that yields results from the server as they are received.
      */
     stream<T = any>(methodName: string, ...args: any[]): IStreamResult<T>;
-    private sendMessage;
     /** Invokes a hub method on the server using the specified name and arguments. Does not wait for a response from the receiver.
      *
      * The Promise returned by this method resolves when the client has sent the invocation to the server. The server may still
@@ -106,12 +85,10 @@ export declare class HubConnection {
     onclose(callback: (error?: Error) => void): void;
     private processIncomingData;
     private processHandshakeResponse;
-    private resetKeepAliveInterval;
-    private resetTimeoutPeriod;
+    private configureTimeout;
     private serverTimeout;
     private invokeClientMethod;
     private connectionClosed;
-    private cleanupPingTimer;
     private cleanupTimeout;
     private createInvocation;
     private createStreamInvocation;

@@ -1,6 +1,4 @@
 ﻿using Apex.Robot.RPi.Interfaces;
-using Apex.Robot.RPi.Services;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Apex.Robot.RPi.Controllers
@@ -14,6 +12,14 @@ namespace Apex.Robot.RPi.Controllers
         public SensorsController(ISensorsService service)
         {
             _service = service;
+        }
+
+        [HttpGet("infrared")]
+        public IActionResult Infrared()
+        {
+            var infrared = _service.ReadInfrared();
+
+            return Ok(infrared);
         }
 
         [HttpGet("follow")]

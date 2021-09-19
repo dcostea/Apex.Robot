@@ -19,12 +19,3 @@ export declare class TimeoutError extends Error {
      */
     constructor(errorMessage?: string);
 }
-/** Error thrown when an action is aborted. */
-export declare class AbortError extends Error {
-    private __proto__;
-    /** Constructs a new instance of {@link AbortError}.
-     *
-     * @param {string} errorMessage A descriptive error message.
-     */
-    constructor(errorMessage?: string);
-}

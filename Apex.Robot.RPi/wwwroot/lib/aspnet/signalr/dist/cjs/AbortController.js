@@ -10,7 +10,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var AbortController = /** @class */ (function () {
     function AbortController() {
         this.isAborted = false;
-        this.onabort = null;
     }
     AbortController.prototype.abort = function () {
         if (!this.isAborted) {

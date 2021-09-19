@@ -40,15 +40,6 @@ import { MessageType } from "./IHubProtocol";
 import { LogLevel } from "./ILogger";
 import { Arg, Subject } from "./Utils";
 var DEFAULT_TIMEOUT_IN_MS = 30 * 1000;
-var DEFAULT_PING_INTERVAL_IN_MS = 15 * 1000;
-/** Describes the current state of the {@link HubConnection} to the server. */
-export var HubConnectionState;
-(function (HubConnectionState) {
-    /** The hub connection is disconnected. */
-    HubConnectionState[HubConnectionState["Disconnected"] = 0] = "Disconnected";
-    /** The hub connection is connected. */
-    HubConnectionState[HubConnectionState["Connected"] = 1] = "Connected";
-})(HubConnectionState || (HubConnectionState = {}));
 /** Represents a connection to a SignalR Hub. */
 var HubConnection = /** @class */ (function () {
     function HubConnection(connection, logger, protocol) {
@@ -57,7 +48,6 @@ var HubConnection = /** @class */ (function () {
         Arg.isRequired(logger, "logger");
         Arg.isRequired(protocol, "protocol");
         this.serverTimeoutInMilliseconds = DEFAULT_TIMEOUT_IN_MS;
-        this.keepAliveIntervalInMilliseconds = DEFAULT_PING_INTERVAL_IN_MS;
         this.logger = logger;
         this.protocol = protocol;
         this.connection = connection;
@@ -68,9 +58,6 @@ var HubConnection = /** @class */ (function () {
         this.methods = {};
         this.closedCallbacks = [];
         this.id = 0;
-        this.receivedHandshakeResponse = false;
-        this.connectionState = HubConnectionState.Disconnected;
-        this.cachedPingMessage = this.protocol.writeMessage({ type: MessageType.Ping });
     }
     /** @internal */
     // Using a public static factory method means we can have a private constructor and an _internal_
@@ -80,22 +67,13 @@ var HubConnection = /** @class */ (function () {
     HubConnection.create = function (connection, logger, protocol) {
         return new HubConnection(connection, logger, protocol);
     };
-    Object.defineProperty(HubConnection.prototype, "state", {
-        /** Indicates the state of the {@link HubConnection} to the server. */
-        get: function () {
-            return this.connectionState;
-        },
-        enumerable: true,
-        configurable: true
-    });
     /** Starts the connection.
      *
      * @returns {Promise<void>} A Promise that resolves when the connection has been successfully established, or rejects with an error.
      */
     HubConnection.prototype.start = function () {
         return __awaiter(this, void 0, void 0, function () {
-            var handshakeRequest, handshakePromise;
-            var _this = this;
+            var handshakeRequest;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
@@ -105,28 +83,17 @@ var HubConnection = /** @class */ (function () {
                         };
                         this.logger.log(LogLevel.Debug, "Starting HubConnection.");
                         this.receivedHandshakeResponse = false;
-                        handshakePromise = new Promise(function (resolve, reject) {
-                            _this.handshakeResolver = resolve;
-                            _this.handshakeRejecter = reject;
-                        });
                         return [4 /*yield*/, this.connection.start(this.protocol.transferFormat)];
                     case 1:
                         _a.sent();
                         this.logger.log(LogLevel.Debug, "Sending handshake request.");
-                        return [4 /*yield*/, this.sendMessage(this.handshakeProtocol.writeHandshakeRequest(handshakeRequest))];
+                        return [4 /*yield*/, this.connection.send(this.handshakeProtocol.writeHandshakeRequest(handshakeRequest))];
                     case 2:
                         _a.sent();
                         this.logger.log(LogLevel.Information, "Using HubProtocol '" + this.protocol.name + "'.");
                         // defensively cleanup timeout in case we receive a message from the server before we finish start
                         this.cleanupTimeout();
-                        this.resetTimeoutPeriod();
-                        this.resetKeepAliveInterval();
-                        // Wait for the handshake to complete before marking connection as connected
-                        return [4 /*yield*/, handshakePromise];
-                    case 3:
-                        // Wait for the handshake to complete before marking connection as connected
-                        _a.sent();
-                        this.connectionState = HubConnectionState.Connected;
+                        this.configureTimeout();
                         return [2 /*return*/];
                 }
             });
@@ -139,7 +106,6 @@ var HubConnection = /** @class */ (function () {
     HubConnection.prototype.stop = function () {
         this.logger.log(LogLevel.Debug, "Stopping HubConnection.");
         this.cleanupTimeout();
-        this.cleanupPingTimer();
         return this.connection.stop();
     };
     /** Invokes a streaming hub method on the server using the specified name and arguments.
@@ -156,47 +122,36 @@ var HubConnection = /** @class */ (function () {
             args[_i - 1] = arguments[_i];
         }
         var invocationDescriptor = this.createStreamInvocation(methodName, args);
-        var promiseQueue;
-        var subject = new Subject();
-        subject.cancelCallback = function () {
+        var subject = new Subject(function () {
             var cancelInvocation = _this.createCancelInvocation(invocationDescriptor.invocationId);
             var cancelMessage = _this.protocol.writeMessage(cancelInvocation);
             delete _this.callbacks[invocationDescriptor.invocationId];
-            return promiseQueue.then(function () {
-                return _this.sendMessage(cancelMessage);
-            });
-        };
+            return _this.connection.send(cancelMessage);
+        });
         this.callbacks[invocationDescriptor.invocationId] = function (invocationEvent, error) {
             if (error) {
                 subject.error(error);
                 return;
             }
-            else if (invocationEvent) {
-                // invocationEvent will not be null when an error is not passed to the callback
-                if (invocationEvent.type === MessageType.Completion) {
-                    if (invocationEvent.error) {
-                        subject.error(new Error(invocationEvent.error));
-                    }
-                    else {
-                        subject.complete();
-                    }
+            if (invocationEvent.type === MessageType.Completion) {
+                if (invocationEvent.error) {
+                    subject.error(new Error(invocationEvent.error));
                 }
                 else {
-                    subject.next((invocationEvent.item));
+                    subject.complete();
                 }
+            }
+            else {
+                subject.next((invocationEvent.item));
             }
         };
         var message = this.protocol.writeMessage(invocationDescriptor);
-        promiseQueue = this.sendMessage(message)
+        this.connection.send(message)
             .catch(function (e) {
             subject.error(e);
             delete _this.callbacks[invocationDescriptor.invocationId];
         });
         return subject;
-    };
-    HubConnection.prototype.sendMessage = function (message) {
-        this.resetKeepAliveInterval();
-        return this.connection.send(message);
     };
     /** Invokes a hub method on the server using the specified name and arguments. Does not wait for a response from the receiver.
      *
@@ -214,7 +169,7 @@ var HubConnection = /** @class */ (function () {
         }
         var invocationDescriptor = this.createInvocation(methodName, args, true);
         var message = this.protocol.writeMessage(invocationDescriptor);
-        return this.sendMessage(message);
+        return this.connection.send(message);
     };
     /** Invokes a hub method on the server using the specified name and arguments.
      *
@@ -235,32 +190,28 @@ var HubConnection = /** @class */ (function () {
         }
         var invocationDescriptor = this.createInvocation(methodName, args, false);
         var p = new Promise(function (resolve, reject) {
-            // invocationId will always have a value for a non-blocking invocation
             _this.callbacks[invocationDescriptor.invocationId] = function (invocationEvent, error) {
                 if (error) {
                     reject(error);
                     return;
                 }
-                else if (invocationEvent) {
-                    // invocationEvent will not be null when an error is not passed to the callback
-                    if (invocationEvent.type === MessageType.Completion) {
-                        if (invocationEvent.error) {
-                            reject(new Error(invocationEvent.error));
-                        }
-                        else {
-                            resolve(invocationEvent.result);
-                        }
+                if (invocationEvent.type === MessageType.Completion) {
+                    var completionMessage = invocationEvent;
+                    if (completionMessage.error) {
+                        reject(new Error(completionMessage.error));
                     }
                     else {
-                        reject(new Error("Unexpected message type: " + invocationEvent.type));
+                        resolve(completionMessage.result);
                     }
+                }
+                else {
+                    reject(new Error("Unexpected message type: " + invocationEvent.type));
                 }
             };
             var message = _this.protocol.writeMessage(invocationDescriptor);
-            _this.sendMessage(message)
+            _this.connection.send(message)
                 .catch(function (e) {
                 reject(e);
-                // invocationId will always have a value for a non-blocking invocation
                 delete _this.callbacks[invocationDescriptor.invocationId];
             });
         });
@@ -349,15 +300,15 @@ var HubConnection = /** @class */ (function () {
                         this.logger.log(LogLevel.Information, "Close message received from server.");
                         // We don't want to wait on the stop itself.
                         // tslint:disable-next-line:no-floating-promises
-                        this.connection.stop(message.error ? new Error("Server returned an error on close: " + message.error) : undefined);
+                        this.connection.stop(message.error ? new Error("Server returned an error on close: " + message.error) : null);
                         break;
                     default:
-                        this.logger.log(LogLevel.Warning, "Invalid message type: " + message.type + ".");
+                        this.logger.log(LogLevel.Warning, "Invalid message type: " + message.type);
                         break;
                 }
             }
         }
-        this.resetTimeoutPeriod();
+        this.configureTimeout();
     };
     HubConnection.prototype.processHandshakeResponse = function (data) {
         var _a;
@@ -373,52 +324,21 @@ var HubConnection = /** @class */ (function () {
             // We don't want to wait on the stop itself.
             // tslint:disable-next-line:no-floating-promises
             this.connection.stop(error);
-            this.handshakeRejecter(error);
             throw error;
         }
         if (responseMessage.error) {
             var message = "Server returned handshake error: " + responseMessage.error;
             this.logger.log(LogLevel.Error, message);
-            this.handshakeRejecter(message);
             // We don't want to wait on the stop itself.
             // tslint:disable-next-line:no-floating-promises
             this.connection.stop(new Error(message));
-            throw new Error(message);
         }
         else {
             this.logger.log(LogLevel.Debug, "Server handshake complete.");
         }
-        this.handshakeResolver();
         return remainingData;
     };
-    HubConnection.prototype.resetKeepAliveInterval = function () {
-        var _this = this;
-        this.cleanupPingTimer();
-        this.pingServerHandle = setTimeout(function () { return __awaiter(_this, void 0, void 0, function () {
-            var _a;
-            return __generator(this, function (_b) {
-                switch (_b.label) {
-                    case 0:
-                        if (!(this.connectionState === HubConnectionState.Connected)) return [3 /*break*/, 4];
-                        _b.label = 1;
-                    case 1:
-                        _b.trys.push([1, 3, , 4]);
-                        return [4 /*yield*/, this.sendMessage(this.cachedPingMessage)];
-                    case 2:
-                        _b.sent();
-                        return [3 /*break*/, 4];
-                    case 3:
-                        _a = _b.sent();
-                        // We don't care about the error. It should be seen elsewhere in the client.
-                        // The connection is probably in a bad or closed state now, cleanup the timer so it stops triggering
-                        this.cleanupPingTimer();
-                        return [3 /*break*/, 4];
-                    case 4: return [2 /*return*/];
-                }
-            });
-        }); }, this.keepAliveIntervalInMilliseconds);
-    };
-    HubConnection.prototype.resetTimeoutPeriod = function () {
+    HubConnection.prototype.configureTimeout = function () {
         var _this = this;
         if (!this.connection.features || !this.connection.features.inherentKeepAlive) {
             // Set the timeout timer
@@ -453,25 +373,13 @@ var HubConnection = /** @class */ (function () {
         var _this = this;
         var callbacks = this.callbacks;
         this.callbacks = {};
-        this.connectionState = HubConnectionState.Disconnected;
-        // if handshake is in progress start will be waiting for the handshake promise, so we complete it
-        // if it has already completed this should just noop
-        if (this.handshakeRejecter) {
-            this.handshakeRejecter(error);
-        }
         Object.keys(callbacks)
             .forEach(function (key) {
             var callback = callbacks[key];
-            callback(null, error ? error : new Error("Invocation canceled due to connection being closed."));
+            callback(undefined, error ? error : new Error("Invocation canceled due to connection being closed."));
         });
         this.cleanupTimeout();
-        this.cleanupPingTimer();
         this.closedCallbacks.forEach(function (c) { return c.apply(_this, [error]); });
-    };
-    HubConnection.prototype.cleanupPingTimer = function () {
-        if (this.pingServerHandle) {
-            clearTimeout(this.pingServerHandle);
-        }
     };
     HubConnection.prototype.cleanupTimeout = function () {
         if (this.timeoutHandle) {

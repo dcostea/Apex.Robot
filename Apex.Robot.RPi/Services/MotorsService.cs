@@ -1,5 +1,6 @@
 ﻿using Apex.Robot.RPi.Interfaces;
 using Apex.Robot.RPi.Models;
+using Serilog;
 using System;
 using System.Device.Gpio;
 
@@ -28,7 +29,7 @@ namespace Apex.Robot.RPi.Services
             _gpioController.Write(_settings.RightBackwardPin, PinValue.Low);
             _gpioController.Write(_settings.RightForwardPin, PinValue.Low);
 
-            Console.WriteLine("full stop...");
+            Log.Debug("full stop...");
         }
 
         public void TurnLeft(int milliseconds)
@@ -36,7 +37,7 @@ namespace Apex.Robot.RPi.Services
             _gpioController.Write(_settings.RightBackwardPin, PinValue.Low);
             _gpioController.Write(_settings.RightForwardPin, PinValue.High);
 
-            Console.WriteLine("turn left...");
+            Log.Debug("turn left...");
             System.Threading.Thread.Sleep(milliseconds);
             FullStop();
         }
@@ -46,7 +47,7 @@ namespace Apex.Robot.RPi.Services
             _gpioController.Write(_settings.LeftBackwardPin, PinValue.Low);
             _gpioController.Write(_settings.LeftForwardPin, PinValue.High);
 
-            Console.WriteLine("turn right...");
+            Log.Debug("turn right...");
             System.Threading.Thread.Sleep(milliseconds);
             FullStop();
         }
@@ -58,7 +59,7 @@ namespace Apex.Robot.RPi.Services
             _gpioController.Write(_settings.LeftBackwardPin, PinValue.Low);
             _gpioController.Write(_settings.LeftForwardPin, PinValue.High);
 
-            Console.WriteLine("forward...");
+            Log.Debug("forward...");
             System.Threading.Thread.Sleep(milliseconds);
             FullStop();
         }
@@ -70,7 +71,7 @@ namespace Apex.Robot.RPi.Services
             _gpioController.Write(_settings.LeftBackwardPin, PinValue.High);
             _gpioController.Write(_settings.LeftForwardPin, PinValue.Low);
 
-            Console.WriteLine("backward...");
+            Log.Debug("backward...");
             System.Threading.Thread.Sleep(milliseconds);
             FullStop();
         }

@@ -17,12 +17,6 @@ export declare class HubConnectionBuilder {
      * @returns The {@link @aspnet/signalr.HubConnectionBuilder} instance, for chaining.
      */
     configureLogging(logger: ILogger): HubConnectionBuilder;
-    /** Configures custom logging for the {@link @aspnet/signalr.HubConnection}.
-     *
-     * @param {LogLevel | ILogger} logging An object implementing the {@link @aspnet/signalr.ILogger} interface or {@link @aspnet/signalr.LogLevel}.
-     * @returns The {@link @aspnet/signalr.HubConnectionBuilder} instance, for chaining.
-     */
-    configureLogging(logging: LogLevel | ILogger): HubConnectionBuilder;
     /** Configures the {@link @aspnet/signalr.HubConnection} to use HTTP-based transports to connect to the specified URL.
      *
      * The transport will be selected automatically based on what the server and client support.

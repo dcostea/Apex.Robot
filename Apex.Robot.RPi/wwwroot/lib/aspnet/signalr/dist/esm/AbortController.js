@@ -8,7 +8,6 @@
 var AbortController = /** @class */ (function () {
     function AbortController() {
         this.isAborted = false;
-        this.onabort = null;
     }
     AbortController.prototype.abort = function () {
         if (!this.isAborted) {
