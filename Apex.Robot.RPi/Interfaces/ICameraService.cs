@@ -1,7 +1,11 @@
-﻿namespace Apex.Robot.RPi.Interfaces
+﻿using System.Threading.Tasks;
+
+namespace Apex.Robot.RPi.Interfaces
 {
     public interface ICameraService
     {
-        public byte[] GetImage(uint width, uint height);
+        byte[] GetImage(uint width, uint height);
+
+        Task<string> GetInceptionPrediction(string fileName);
     }
 }

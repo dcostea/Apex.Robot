@@ -28,8 +28,6 @@ namespace Apex.Robot.RPi.Services
             _gpioController.Write(_settings.LeftForwardPin, PinValue.Low);
             _gpioController.Write(_settings.RightBackwardPin, PinValue.Low);
             _gpioController.Write(_settings.RightForwardPin, PinValue.Low);
-
-            Log.Debug("full stop...");
         }
 
         public void TurnLeft(int milliseconds)
@@ -37,7 +35,6 @@ namespace Apex.Robot.RPi.Services
             _gpioController.Write(_settings.RightBackwardPin, PinValue.Low);
             _gpioController.Write(_settings.RightForwardPin, PinValue.High);
 
-            Log.Debug("turn left...");
             System.Threading.Thread.Sleep(milliseconds);
             FullStop();
         }
@@ -47,7 +44,6 @@ namespace Apex.Robot.RPi.Services
             _gpioController.Write(_settings.LeftBackwardPin, PinValue.Low);
             _gpioController.Write(_settings.LeftForwardPin, PinValue.High);
 
-            Log.Debug("turn right...");
             System.Threading.Thread.Sleep(milliseconds);
             FullStop();
         }
@@ -59,7 +55,6 @@ namespace Apex.Robot.RPi.Services
             _gpioController.Write(_settings.LeftBackwardPin, PinValue.Low);
             _gpioController.Write(_settings.LeftForwardPin, PinValue.High);
 
-            Log.Debug("forward...");
             System.Threading.Thread.Sleep(milliseconds);
             FullStop();
         }
@@ -71,7 +66,6 @@ namespace Apex.Robot.RPi.Services
             _gpioController.Write(_settings.LeftBackwardPin, PinValue.High);
             _gpioController.Write(_settings.LeftForwardPin, PinValue.Low);
 
-            Log.Debug("backward...");
             System.Threading.Thread.Sleep(milliseconds);
             FullStop();
         }
@@ -82,9 +76,9 @@ namespace Apex.Robot.RPi.Services
 
             Forward(500);
 
-            TurnLeft(300);
+            TurnLeft(500);
 
-            TurnRight(300);
+            TurnRight(500);
 
             Backward(500);
         }
@@ -94,10 +88,10 @@ namespace Apex.Robot.RPi.Services
             if (DateTime.Now > sleepTo)
             {
                 Backward(500);
-
-                TurnLeft(300);
-
+                TurnLeft(500);
                 Forward(500);
+
+                Log.Debug("[MOTORS] Run away!!!!!!!!!!!!!!!!!!!!");
             }
         }
     }

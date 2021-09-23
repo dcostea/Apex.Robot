@@ -29,6 +29,6 @@ public class ModelInput
 
     public override string ToString()
     {
-        return $"Temperature: {Temperature} Humidity: {Humidity} Infrared: {Infrared} Distance: {Distance} CreatedAt: {CreatedAt} IsAlarm: {IsAlarm}";
+        return $"Infrared: {Infrared} Temperature: {Temperature} Humidity: {Humidity} Distance: {Distance}";
     }
 }

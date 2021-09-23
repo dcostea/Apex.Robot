@@ -24,7 +24,7 @@ namespace Apex.Robot.RPi.Controllers
         public IActionResult Capture()
         {
             var image = _service.GetImage(_imageWidth, _imageHeight);
-
+            
             return Ok(image);
         }
     }

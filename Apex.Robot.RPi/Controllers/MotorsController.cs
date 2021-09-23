@@ -41,7 +41,7 @@ public class MotorsController : ControllerBase
     [HttpGet("right")]
     public IActionResult Right()
     {
-        _service.TurnRight(300);
+        _service.TurnRight(500);
 
         return Ok();
     }
@@ -49,7 +49,7 @@ public class MotorsController : ControllerBase
     [HttpGet("left")]
     public IActionResult Left()
     {
-        _service.TurnLeft(300);
+        _service.TurnLeft(500);
 
         return Ok();
     }

@@ -4,6 +4,7 @@ using Apex.Robot.RPi.Models;
 using Microsoft.AspNetCore.SignalR;
 using System.Threading.Channels;
 using System.Threading.Tasks;
+using Serilog;
 
 namespace Apex.Robot.RPi.Hubs
 {
@@ -48,6 +49,7 @@ namespace Apex.Robot.RPi.Hubs
                     byte[] image;
                     try
                     {
+                        Log.Debug("");
                         image = _cameraService.GetImage(_imageWidth, _imageHeight);
                         var capture = new Capture
                         {

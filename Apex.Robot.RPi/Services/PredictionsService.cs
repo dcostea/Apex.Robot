@@ -53,7 +53,7 @@ namespace Apex.Robot.RPi.Services
             var predictor = mlContext.Model.CreatePredictionEngine<ModelInput, ModelOutput>(model);
             var predicted = predictor.Predict(sampleData);
 
-            Log.Debug($"Prediction: {predicted.Prediction}");
+            Log.Debug($"[PREDICT] IsAlarm: {predicted.Prediction}");
 
             return predicted;
         }
@@ -93,7 +93,8 @@ namespace Apex.Robot.RPi.Services
             var predictor = mlContext.Model.CreatePredictionEngine<ModelInput, ModelOutput>(model);
             var predicted = predictor.Predict(reading);
 
-            Log.Debug($"Prediction for {reading} is *** {predicted.Prediction} ***");
+            Log.Debug($"[SENSORS] {reading}");
+            Log.Debug($"[PREDICT] IsAlarm: {predicted.Prediction}");
 
             return predicted;
         }

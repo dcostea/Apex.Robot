@@ -13,16 +13,23 @@ namespace Apex.Robot.RPi.Hubs
         private readonly ISensorsService _sensorsService;
         private readonly IPredictionsService _predictionsService;
         private readonly IMotorsService _motorsService;
+        private readonly ICameraService _cameraService;
         private DateTime _sleepTo;
         private static bool _isStreaming;
         private readonly ApiSettings _settings;
         public static string IsAlarm { get; set; }
 
-        public SensorsHub(ISensorsService sensorsService, IPredictionsService predictionsService, IMotorsService motorsService, ApiSettings settings)
+        public SensorsHub(
+            ISensorsService sensorsService, 
+            IPredictionsService predictionsService, 
+            IMotorsService motorsService, 
+            ICameraService cameraService,
+            ApiSettings settings)
         {
             _motorsService = motorsService;
             _sensorsService = sensorsService;
             _predictionsService = predictionsService;
+            _cameraService = cameraService;
             _settings = settings;
             _sleepTo = DateTime.Now;
         }
@@ -52,21 +59,9 @@ namespace Apex.Robot.RPi.Hubs
                     try
                     {
                         var humidity = _sensorsService.ReadHumidity();
-                        //await Task.Delay(_settings.ReadingDelay);
-                        Log.Debug($"humidity {humidity}");
-
                         var temperature = _sensorsService.ReadTemperature();
-                        //await Task.Delay(_settings.ReadingDelay);
-                        Log.Debug($"temperature {temperature}");
-
                         var infrared = _sensorsService.ReadInfrared();
-                        //await Task.Delay(_settings.ReadingDelay);
-                        Log.Debug($"infrared {infrared}");
-
                         var distance = _sensorsService.ReadDistance();
-                        //await Task.Delay(_settings.ReadingDelay);
-                        Log.Debug($"distance {distance}");
-
                         var createdAt = DateTime.Now.ToString("yyyyMMddhhmmssff");
 
                         var reading = new ModelInput
@@ -81,18 +76,15 @@ namespace Apex.Robot.RPi.Hubs
                         var prediction = _predictionsService.Predict(reading);
                         reading.IsAlarm = prediction.Prediction;
 
-                        if (reading.IsAlarm) 
+                        var inceptionPrediction = await _cameraService.GetInceptionPrediction("capture.jpg");
+
+                        if (reading.IsAlarm && inceptionPrediction.Equals("Lighter")) 
                         {
-                            Log.Debug($"Now: {DateTime.Now} Sleep motors until: {_sleepTo}");
                             _motorsService.RunAway(_sleepTo);
-                            _sleepTo = DateTime.Now.AddSeconds(2);
+                            _sleepTo = DateTime.Now.AddSeconds(5);
                         }
 
-                        //TODO change with logging
-                        Log.Debug(reading.ToString());
-
                         await writer.WriteAsync(reading);
-                        //TODO replace with ToString
                         await Clients.All.SendAsync("sensorsDataCaptured", $"{humidity}, {temperature}, {infrared}, {distance}, {createdAt}, {IsAlarm}");
 
                         await Task.Delay(_settings.ReadingDelay);
@@ -106,11 +98,6 @@ namespace Apex.Robot.RPi.Hubs
                     await Task.Delay(_settings.ReadingDelay);
                 }
             }
-        }
-
-        public void ChangeSource(string isAlarm)
-        {
-            IsAlarm = isAlarm.Trim();
         }
     }
 }
