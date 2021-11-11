@@ -7,17 +7,17 @@ namespace Apex.Robot.RPi.Controllers
     [ApiController]
     public class SensorsController : ControllerBase
     {
-        private readonly ISensorsService _service;
+        private readonly ISensorsService _sensorsService;
 
         public SensorsController(ISensorsService service)
         {
-            _service = service;
+            _sensorsService = service;
         }
 
         [HttpGet("infrared")]
         public IActionResult Infrared()
         {
-            var infrared = _service.ReadInfrared();
+            var infrared = _sensorsService.ReadInfrared();
 
             return Ok(infrared);
         }
@@ -25,7 +25,7 @@ namespace Apex.Robot.RPi.Controllers
         [HttpGet("follow")]
         public IActionResult Follow()
         {
-            _service.FollowLine();
+            _sensorsService.FollowLine();
 
             return Ok();
         }
@@ -33,7 +33,7 @@ namespace Apex.Robot.RPi.Controllers
         [HttpGet("distance")]
         public IActionResult Distance()
         {
-            var distance = _service.ReadDistance();
+            var distance = _sensorsService.ReadDistance();
 
             return Ok(distance);
         }
@@ -41,7 +41,7 @@ namespace Apex.Robot.RPi.Controllers
         [HttpGet("temperature")]
         public IActionResult Temperature()
         {
-            var temperature = _service.ReadTemperature();
+            var temperature = _sensorsService.ReadTemperature();
 
             return Ok(temperature);
         }
@@ -49,9 +49,17 @@ namespace Apex.Robot.RPi.Controllers
         [HttpGet("humidity")]
         public IActionResult Humidity()
         {
-            var humidity = _service.ReadHumidity();
+            var humidity = _sensorsService.ReadHumidity();
 
             return Ok(humidity);
+        }
+
+        [HttpGet("luminosity")]
+        public IActionResult Luminosity()
+        {
+            var luminosity = _sensorsService.ReadLuminosity();
+
+            return Ok(luminosity);
         }
     }
 }

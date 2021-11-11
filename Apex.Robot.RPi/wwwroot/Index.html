@@ -26,14 +26,21 @@
                 <input type="image" class="limit_96 command" title="Stop streaming" id="stop" onfocus="blur()" src="/images/offline.png" />
             </div>
             <div class="col-2">
-                <!--<input type="image" class="limit_64 command" title="Retrain Inception model" id="inception_train" onfocus="blur()" src="images/wheel.png" />-->
+                <input type="image" class="limit_64 command" title="Retrain Inception model" id="inception_train" onfocus="blur()" src="images/wheel.png" />
             </div>
         </div>
 
         <div class="row m-5">
             <div class="col-2">
                 <div class="card text-center limit_128">
-                    <!-- change with a proper humidity icon -->
+                    <img class="card-img-top rounded" src="images/lux.png" alt="Luminosity" title="Luminosity">
+                    <div class="card-footer">
+                        <h4><span id="lux" class="card-text badge bg-primary">?</span></h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-2">
+                <div class="card text-center limit_128">
                     <img class="card-img-top rounded" src="images/humidity.png" alt="Humidity" title="Humidity">
                     <div class="card-footer">
                         <h4><span id="humid" class="card-text badge bg-primary">? %</span></h4>

@@ -11,9 +11,10 @@
         public string SensorsHub { get; set; }
 
 
-
+        //TODO cleaup this pin settings
         public int InfraredPin { get; set; }
 
+        //TODO cleaup this pin settings
         public int TemperaturePin { get; set; }
 
         public int LinePin { get; set; }

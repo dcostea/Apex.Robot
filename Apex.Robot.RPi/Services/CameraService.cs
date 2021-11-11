@@ -5,7 +5,6 @@ using Serilog;
 using System;
 using System.IO;
 using System.Net.Http;
-using System.Net.Http.Headers;
 using System.Threading.Tasks;
 
 namespace Apex.Robot.RPi.Services
@@ -33,10 +32,14 @@ namespace Apex.Robot.RPi.Services
             using (var content = new StringContent(Convert.ToBase64String(StreamToByteArray(stream))))
             {
                 var response = await client.PostAsync(url, content);
-                var result = await response.Content.ReadAsStringAsync();
 
-                Log.Debug($"[PREDICT] Image: {result}");
-                return result;
+                if (response.IsSuccessStatusCode) 
+                {
+                    var result = await response.Content.ReadAsStringAsync();
+                    Log.Debug($"[PREDICT] Image: {result}");
+                }
+
+                return string.Empty;
             }
         }
 

@@ -31,21 +31,29 @@ namespace Apex.Robot.RPi.Services
             var trainingData = split.TrainSet;
             var testingData = split.TestSet;
 
-            //TODO use featureColumns or not
-            var featureColumns = new[] { "Temperature", "Humidity", "Infrared", "Distance" };
+            //TODO add luminosity and retrain
+            var featureColumns = new[] { "Luminosity", "Temperature", "Humidity", "Infrared", "Distance" };
 
-            var trainingPipeline = mlContext.Transforms.ReplaceMissingValues(new[] { new InputOutputColumnPair(@"Temperature", @"Temperature"), new InputOutputColumnPair(@"Humidity", @"Humidity"), new InputOutputColumnPair(@"Infrared", @"Infrared"), new InputOutputColumnPair(@"Distance", @"Distance") })
+            var trainingPipeline = mlContext.Transforms.ReplaceMissingValues(new[]
+            {
+                new InputOutputColumnPair(@"Luminosity", @"Luminosity"),
+                new InputOutputColumnPair(@"Temperature", @"Temperature"),
+                new InputOutputColumnPair(@"Humidity", @"Humidity"),
+                new InputOutputColumnPair(@"Infrared", @"Infrared"),
+                new InputOutputColumnPair(@"Distance", @"Distance")
+            })
                 .Append(mlContext.Transforms.Text.FeaturizeText(@"CreatedAt", @"CreatedAt"))
-                .Append(mlContext.Transforms.Concatenate(@"Features", new[] { @"Temperature", @"Humidity", @"Infrared", @"Distance", @"CreatedAt" }))
+                .Append(mlContext.Transforms.Concatenate(@"Features", new[] { @"Luminosity", @"Temperature", @"Humidity", @"Infrared", @"Distance", @"CreatedAt" }))
                 .Append(mlContext.BinaryClassification.Trainers.FastTree(new FastTreeBinaryTrainer.Options() { NumberOfLeaves = 5, MinimumExampleCountPerLeaf = 21, NumberOfTrees = 4, MaximumBinCountPerFeature = 248, LearningRate = 0.0327903143558005F, FeatureFraction = 0.913244540244145F, LabelColumnName = @"IsAlarm", FeatureColumnName = @"Features" }));
 
             var model = trainingPipeline.Fit(trainingData);
 
             var sampleData = new ModelInput
             {
+                Luminosity = 10F,
                 Temperature = 32F,
                 Humidity = 22F,
-                Infrared = 10F,
+                Infrared = 1F,
                 Distance = 20F,
                 CreatedAt = "01/03/2020 10:22:08"
             };
@@ -72,11 +80,18 @@ namespace Apex.Robot.RPi.Services
             var testingData = split.TestSet;
 
             //TODO use featureColumns or not
-            var featureColumns = new[] { "Temperature", "Humidity", "Infrared", "Distance" };
+            var featureColumns = new[] { "Luminosity", "Temperature", "Humidity", "Infrared", "Distance" };
 
-            var trainingPipeline = mlContext.Transforms.ReplaceMissingValues(new[] { new InputOutputColumnPair(@"Temperature", @"Temperature"), new InputOutputColumnPair(@"Humidity", @"Humidity"), new InputOutputColumnPair(@"Infrared", @"Infrared"), new InputOutputColumnPair(@"Distance", @"Distance") })
+            var trainingPipeline = mlContext.Transforms.ReplaceMissingValues(new[] 
+            {
+                new InputOutputColumnPair(@"Luminosity", @"Luminosity"),
+                new InputOutputColumnPair(@"Temperature", @"Temperature"), 
+                new InputOutputColumnPair(@"Humidity", @"Humidity"), 
+                new InputOutputColumnPair(@"Infrared", @"Infrared"), 
+                new InputOutputColumnPair(@"Distance", @"Distance") 
+            })
                 .Append(mlContext.Transforms.Text.FeaturizeText(@"CreatedAt", @"CreatedAt"))
-                .Append(mlContext.Transforms.Concatenate(@"Features", new[] { @"Temperature", @"Humidity", @"Infrared", @"Distance", @"CreatedAt" }))
+                .Append(mlContext.Transforms.Concatenate(@"Features", new[] { @"Luminosity", @"Temperature", @"Humidity", @"Infrared", @"Distance", @"CreatedAt" }))
                 .Append(mlContext.BinaryClassification.Trainers.FastTree(new FastTreeBinaryTrainer.Options() { NumberOfLeaves = 5, MinimumExampleCountPerLeaf = 21, NumberOfTrees = 4, MaximumBinCountPerFeature = 248, LearningRate = 0.0327903143558005F, FeatureFraction = 0.913244540244145F, LabelColumnName = @"IsAlarm", FeatureColumnName = @"Features" }));
 
             var model = trainingPipeline.Fit(trainingData);

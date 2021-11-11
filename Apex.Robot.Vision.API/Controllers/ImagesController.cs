@@ -50,7 +50,7 @@ namespace Apex.Robot.Vision.API.Controllers
 
             try
             {
-                var testImage = Path.Combine(inceptionTrainImagesFolder, "capture.jpg");
+                var testImage = @"C:\Temp\capture.jpg";
 
                 using var image = Image.FromStream(new MemoryStream(imageBytes));
                 image.Save(testImage, ImageFormat.Jpeg);
@@ -67,6 +67,7 @@ namespace Apex.Robot.Vision.API.Controllers
                 }
 
                 var prediction = Inception.Model.Predict(imageData);
+                Console.WriteLine($"prediction: {prediction.PredictedLabelValue}");
                 result = prediction.PredictedLabelValue;
             }
             catch (Exception ex)

@@ -73,13 +73,9 @@ namespace Apex.Robot.RPi.Services
         public void CheckMotors()
         {
             FullStop();
-
             Forward(500);
-
             TurnLeft(500);
-
             TurnRight(500);
-
             Backward(500);
         }
 

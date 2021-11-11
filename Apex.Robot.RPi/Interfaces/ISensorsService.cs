@@ -6,6 +6,7 @@
         double ReadDistance();
         double ReadTemperature();
         double ReadHumidity();
+        double ReadLuminosity();
         double FollowLine();
     }
 }

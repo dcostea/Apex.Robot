@@ -58,14 +58,16 @@ namespace Apex.Robot.RPi.Hubs
                 {
                     try
                     {
+                        var luminosity = _sensorsService.ReadLuminosity();
                         var humidity = _sensorsService.ReadHumidity();
                         var temperature = _sensorsService.ReadTemperature();
                         var infrared = _sensorsService.ReadInfrared();
                         var distance = _sensorsService.ReadDistance();
-                        var createdAt = DateTime.Now.ToString("yyyyMMddhhmmssff");
+                        var createdAt = DateTime.Now.ToString("s");
 
                         var reading = new ModelInput
                         {
+                            Luminosity = (float)luminosity,
                             Humidity = (float)humidity,
                             Temperature = (float)temperature,
                             Infrared = (float)infrared,
@@ -81,17 +83,17 @@ namespace Apex.Robot.RPi.Hubs
                         if (reading.IsAlarm && inceptionPrediction.Equals("Lighter")) 
                         {
                             _motorsService.RunAway(_sleepTo);
-                            _sleepTo = DateTime.Now.AddSeconds(5);
+                            _sleepTo = DateTime.Now.AddSeconds(3);
                         }
 
                         await writer.WriteAsync(reading);
-                        await Clients.All.SendAsync("sensorsDataCaptured", $"{humidity}, {temperature}, {infrared}, {distance}, {createdAt}, {IsAlarm}");
+                        await Clients.All.SendAsync("sensorsDataCaptured", $"{luminosity}, {humidity}, {temperature}, {infrared}, {distance}, {createdAt}, {IsAlarm}");
 
                         await Task.Delay(_settings.ReadingDelay);
                     }
                     catch (Exception ex)
                     {
-                        Log.Error(ex.Message);
+                        Log.Error($"Sensor hub error! {ex.Message}");
                         await Clients.All.SendAsync("sensorsDataNotCaptured");
                     }
 

@@ -44,7 +44,10 @@ namespace Apex.Robot.Vision
 
             //app.UseHttpsRedirection();
 
-            app.UseCors(builder => builder.WithOrigins("http://localhost:5555", "http://localhost:5050", "http://192.168.178.35:5050", "http://172.20.10.12:5050").AllowAnyHeader().AllowAnyMethod().AllowCredentials());
+            app.UseCors(builder => builder.WithOrigins("http://localhost:5555", "http://localhost:5050", "http://192.168.178.21:5050", "http://172.20.10.12:5050")
+                .AllowAnyHeader()
+                .AllowAnyMethod()
+                .AllowCredentials());
 
             app.UseFileServer();
 

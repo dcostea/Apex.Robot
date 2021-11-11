@@ -49,7 +49,6 @@ namespace Apex.Robot.RPi.Hubs
                     byte[] image;
                     try
                     {
-                        Log.Debug("");
                         image = _cameraService.GetImage(_imageWidth, _imageHeight);
                         var capture = new Capture
                         {

@@ -91,6 +91,10 @@ document.addEventListener('DOMContentLoaded', async (event) => {
         console.log(`sensors data captured, ${data}`);
     });
 
+    sensorsConnection.on("sensorsDataNotCaptured", function () {
+        console.log(`sensors data not captured!`);
+    });
+
     sensorsConnection.start();
 
     ////// EVENTS ///////////////////////////////////////////////
@@ -152,13 +156,13 @@ function populateCameraData(data) {
 
 function populateSensorsData(data) {
     if (data !== undefined) {
+        if (data.luminosity !== undefined) {
+            sensors.luminosity = data.luminosity;
+            document.querySelector("#lux").innerHTML = `${data.luminosity} lux`;
+        }
         if (data.humidity !== undefined) {
             sensors.humidity = data.humidity;
             document.querySelector("#humid").innerHTML = `${data.humidity} %`;
-        }
-        if (data.distance !== undefined) {
-            sensors.distance = data.distance;
-            document.querySelector("#dist").innerHTML = `${data.distance} cm`;
         }
         if (data.temperature !== undefined) {
             sensors.temperature = data.temperature;
@@ -167,6 +171,10 @@ function populateSensorsData(data) {
         if (data.infrared !== undefined) {
             sensors.infrared = data.infrared;
             document.querySelector("#infra").innerHTML = `${data.infrared}`;
+        }
+        if (data.distance !== undefined) {
+            sensors.distance = data.distance;
+            document.querySelector("#dist").innerHTML = `${data.distance} cm`;
         }
         if (data.createdAt !== undefined) {
             sensors.createdAt = data.createdAt;
