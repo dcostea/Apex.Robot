@@ -20,8 +20,10 @@ namespace Apex.Robot.Vision
             services.AddControllers().AddJsonOptions(options =>
                 options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 
-            services.Configure<ApiSettings>(Configuration.GetSection("AppSettings"));
-            services.AddSingleton(resolver => resolver.GetRequiredService<IOptions<ApiSettings>>().Value);
+            services.Configure<ImageSettings>(Configuration.GetSection("AppSettings"));
+            services.Configure<ModelSettings>(Configuration.GetSection("ModelSettings"));
+            services.AddSingleton(resolver => resolver.GetRequiredService<IOptions<ImageSettings>>().Value);
+            services.AddSingleton(resolver => resolver.GetRequiredService<IOptions<ModelSettings>>().Value);
 
             services.AddControllers();
             services.AddSwaggerGen(c =>

@@ -3,7 +3,7 @@ using Microsoft.ML;
 
 namespace Apex.Robot.Vision.API.DeepLearning
 {
-    public class Inception
+    public static class Inception
     {
         private const string OUTPUT_LAYER = "softmax2_pre_activation";
         private const string INPUT_LAYER = "input";
@@ -13,14 +13,9 @@ namespace Apex.Robot.Vision.API.DeepLearning
         private static readonly string PredictedLabelValue = nameof(PredictedLabelValue);
         private static readonly string PredictedLabel = nameof(PredictedLabel);
 
-        private static readonly MLContext mlContext;
+        private static readonly MLContext mlContext = new();
 
         public static PredictionEngine<ImageNetData, ImageNetPrediction> Model { get; set; }
-
-        static Inception()
-        {
-            mlContext = new MLContext();
-        }
 
         public static PredictionEngine<ImageNetData, ImageNetPrediction> LoadModel(string tsv, string imagesFolder, string inceptionModel, string modelLocation)
         {

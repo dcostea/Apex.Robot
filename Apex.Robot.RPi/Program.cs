@@ -1,16 +1,15 @@
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.Hosting;
 using Serilog;
-using System;
+using Serilog.Events;
 
 namespace Apex.Robot.RPi
 {
-    public class Program
+    public static class Program
     {
         public static void Main(string[] args)
         {
             Log.Logger = new LoggerConfiguration()
-            //.MinimumLevel.Override("Microsoft", LogEventLevel.Debug)
+            .MinimumLevel.Override("System", LogEventLevel.Debug)
+            .MinimumLevel.Override("Debug", LogEventLevel.Debug)
             .Enrich.FromLogContext()
             .WriteTo.Console()
             .CreateLogger();
@@ -32,7 +31,8 @@ namespace Apex.Robot.RPi
 
         public static IHostBuilder CreateHostBuilder(string[] args) =>
             Host.CreateDefaultBuilder(args)
-                .UseSerilog()
+                .UseSerilog((hostContext, config, loggerConfiguration) => loggerConfiguration
+                    .ReadFrom.Configuration(hostContext.Configuration))
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
                     webBuilder

@@ -1,7 +1,7 @@
 using Apex.Robot.Vision.API.DeepLearning;
-using Apex.Robot.Vision.API.Helpers;
 using Apex.Robot.Vision.API.Models;
 using Microsoft.AspNetCore.Mvc;
+using Serilog;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Text;
@@ -12,30 +12,22 @@ namespace Apex.Robot.Vision.API.Controllers
     [Route("api/[controller]")]
     public class ImagesController : ControllerBase
     {
-        private readonly ApiSettings _settings;
+        private readonly ModelSettings _modelSettings;
 
-        //TODO pull assets path to appsettings
-        static readonly string assetsRelativePath = @"../../../assets";
-        static readonly string assetsPath = PathHelper.GetAbsolutePath(assetsRelativePath);
-
-        static readonly string tagsTsv = Path.Combine(assetsPath, "inputs", "train", "tags.tsv");
-        static readonly string inceptionTrainImagesFolder = Path.Combine(assetsPath, "inputs", "train");
-        static readonly string inceptionPb = Path.Combine(assetsPath, "inputs", "inception", "tensorflow_inception_graph.pb");
-        static readonly string imageClassifierZip = Path.Combine(assetsPath, "outputs", "imageClassifier.zip");
-
-        static readonly string dataRelativePath = @"../../../data";
-        static readonly string dataPath = PathHelper.GetAbsolutePath(dataRelativePath);
-
-        public ImagesController(ApiSettings apiSettings)
+        public ImagesController(ModelSettings modelSettings)
         {
-            _settings = apiSettings;
+            _modelSettings = modelSettings;
+            Log.Debug(_modelSettings.TagsFilePath);
+            Log.Debug(_modelSettings.ModelPath);
+            Log.Debug(_modelSettings.ModelFilePath);
+            Log.Debug(_modelSettings.ZipFilePath);
         }
 
         [HttpGet("train_inception")]
         public IActionResult ReTrainInception()
         {
-            Inception.Model = Inception.LoadAndScoreModel(tagsTsv, inceptionTrainImagesFolder, inceptionPb, imageClassifierZip);
-            Console.WriteLine("inception re-trained");
+            Inception.Model = Inception.LoadAndScoreModel(_modelSettings.TagsFilePath, _modelSettings.ModelPath, _modelSettings.ModelFilePath, _modelSettings.ZipFilePath);
+            Log.Debug("inception re-trained");
 
             return Ok("inception re-trained");
         }
@@ -50,29 +42,24 @@ namespace Apex.Robot.Vision.API.Controllers
 
             try
             {
-                var testImage = @"C:\Temp\capture.jpg";
-
                 using var image = Image.FromStream(new MemoryStream(imageBytes));
-                image.Save(testImage, ImageFormat.Jpeg);
+                image.Save(_modelSettings.TestImageFilePath, ImageFormat.Jpeg);
 
                 var imageData = new ImageNetData()
                 {
-                    ImagePath = testImage,
-                    Label = Path.GetFileNameWithoutExtension(testImage)
+                    ImagePath = _modelSettings.TestImageFilePath,
+                    Label = Path.GetFileNameWithoutExtension(_modelSettings.TestImageFilePath)
                 };
 
-                if (Inception.Model is null)
-                {
-                    Inception.Model = Inception.LoadModel(tagsTsv, inceptionTrainImagesFolder, inceptionPb, imageClassifierZip);
-                }
+                Inception.Model ??= Inception.LoadModel(_modelSettings.TagsFilePath, _modelSettings.ModelPath, _modelSettings.ModelFilePath, _modelSettings.ZipFilePath);
 
                 var prediction = Inception.Model.Predict(imageData);
-                Console.WriteLine($"prediction: {prediction.PredictedLabelValue}");
+                Log.Debug($"prediction: {prediction.PredictedLabelValue}");
                 result = prediction.PredictedLabelValue;
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message);
+                Log.Debug(ex.Message);
             }
 
             return Ok(result);

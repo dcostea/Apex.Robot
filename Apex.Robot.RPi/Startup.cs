@@ -2,11 +2,6 @@ using Apex.Robot.RPi.Hubs;
 using Apex.Robot.RPi.Interfaces;
 using Apex.Robot.RPi.Models;
 using Apex.Robot.RPi.Services;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
 using Serilog;
@@ -51,8 +46,6 @@ namespace Apex.Robot.RPi
             }
             app.UseSwagger();
             app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "Apex.Robot.RPi v1"));
-
-            //app.UseHttpsRedirection();
 
             app.UseFileServer();
 

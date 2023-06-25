@@ -1,8 +1,5 @@
-﻿using System;
-using System.Device.Gpio;
+﻿using System.Device.Gpio;
 using System.Diagnostics;
-using System.Threading;
-using System.Threading.Tasks;
 using UnitsNet;
 using Apex.Robot.RPi.Interfaces;
 using Apex.Robot.RPi.Models;

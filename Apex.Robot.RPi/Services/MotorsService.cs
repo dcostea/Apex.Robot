@@ -1,7 +1,6 @@
 ﻿using Apex.Robot.RPi.Interfaces;
 using Apex.Robot.RPi.Models;
 using Serilog;
-using System;
 using System.Device.Gpio;
 
 namespace Apex.Robot.RPi.Services

@@ -1,6 +1,5 @@
 ﻿using Apex.Robot.RPi.Models;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 
 namespace Apex.Robot.RPi.Controllers
 {
@@ -8,12 +7,10 @@ namespace Apex.Robot.RPi.Controllers
     [ApiController]
     public class MainController : ControllerBase
     {
-        private readonly ILogger<MainController> _logger;
         private readonly ApiSettings _settings;
 
-        public MainController(ILogger<MainController> logger, ApiSettings apiSettings)
+        public MainController(ApiSettings apiSettings)
         {
-            _logger = logger;
             _settings = apiSettings;
         }
 

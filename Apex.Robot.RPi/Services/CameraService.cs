@@ -2,10 +2,6 @@
 using Apex.Robot.RPi.Models;
 using Iot.Device.Media;
 using Serilog;
-using System;
-using System.IO;
-using System.Net.Http;
-using System.Threading.Tasks;
 
 namespace Apex.Robot.RPi.Services
 {
@@ -23,24 +19,22 @@ namespace Apex.Robot.RPi.Services
             var url = $"{_settings.VisionUrl}/api/images/predict_image";
             var settings = new VideoConnectionSettings(busId: 0, captureSize: (_settings.ImageWidth, _settings.ImageHeight), pixelFormat: PixelFormat.JPEG);
             var device = VideoDevice.Create(settings);
-            var stream = device.Capture();
+            var byteArray = device.Capture();
 
-            HttpContent fileStreamContent = new StreamContent(stream);
-            fileStreamContent.Headers.ContentDisposition = new System.Net.Http.Headers.ContentDispositionHeaderValue("form-data") { Name = "file", FileName = fileName };
-            fileStreamContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/octet-stream");
-            using (var client = new HttpClient())
-            using (var content = new StringContent(Convert.ToBase64String(StreamToByteArray(stream))))
+            ////HttpContent fileStreamContent = new StreamContent(stream);
+            ////fileStreamContent.Headers.ContentDisposition = new System.Net.Http.Headers.ContentDispositionHeaderValue("form-data") { Name = "file", FileName = fileName };
+            ////fileStreamContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/octet-stream");
+            using var client = new HttpClient();
+            using var content = new StringContent(Convert.ToBase64String(byteArray));
+            var response = await client.PostAsync(url, content);
+
+            if (response.IsSuccessStatusCode)
             {
-                var response = await client.PostAsync(url, content);
-
-                if (response.IsSuccessStatusCode) 
-                {
-                    var result = await response.Content.ReadAsStringAsync();
-                    Log.Debug($"[PREDICT] Image: {result}");
-                }
-
-                return string.Empty;
+                var result = await response.Content.ReadAsStringAsync();
+                Log.Debug($"[PREDICT] Image: {result}");
             }
+
+            return string.Empty;
         }
 
         public byte[] GetImage(uint width, uint height)
@@ -48,17 +42,9 @@ namespace Apex.Robot.RPi.Services
             //https://github.com/dotnet/iot/blob/main/src/devices/Media/README.md
             var settings = new VideoConnectionSettings(busId: 0, captureSize: (width, height), pixelFormat: PixelFormat.JPEG);
             var device = VideoDevice.Create(settings);
-            var stream = device.Capture();
-            var byteArray = StreamToByteArray(stream);
+            var byteArray = device.Capture();
 
             return byteArray;
-        }
-
-        private byte[] StreamToByteArray(Stream input)
-        {
-            var ms = new MemoryStream();
-            input.CopyTo(ms);
-            return ms.ToArray();
         }
     }
 }
