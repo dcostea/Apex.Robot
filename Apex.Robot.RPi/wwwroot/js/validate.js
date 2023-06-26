@@ -32,9 +32,9 @@ function populateDatasets(data) {
 
 async function getSettings() {
 
-    var url = "main/settings";
+    let url = "main/settings";
 
-    var result = fetch(url, {
+    let result = fetch(url, {
         method: 'GET',
         mode: 'cors'
     })
@@ -44,7 +44,7 @@ async function getSettings() {
 
 function getDatasets() {
 
-    var url = "main/datasets";
+    let url = "main/datasets";
 
     fetch(url, {
         method: 'GET',
@@ -66,7 +66,7 @@ function startMLTraining() {
     document.querySelector("#micro_accuracy").innerHTML = "";
     document.querySelector("#macro_accuracy").innerHTML = "";
 
-    var url = "main/train_ml";
+    let url = "main/train_ml";
 
     fetch(url, {
         method: 'GET',
@@ -121,8 +121,8 @@ function getPredictionBySensors(data) {
 
 function populateDatasets(data) {
 
-    var html = "";
-    for (var file of data) {
+    let html = "";
+    for (let file of data) {
         html += '<li class="list-group-item d-flex justify-content-between align-items-center">';
         html += `<input class="form-check-input mr-1" type="checkbox" checked value="" aria-label="...">`;
         html += `${file.fileName}`;

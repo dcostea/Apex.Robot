@@ -20,7 +20,7 @@ namespace Apex.Robot.RPi
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            Log.Logger = new LoggerConfiguration().ReadFrom.Configuration(Configuration).CreateLogger();
+            //Log.Logger = new LoggerConfiguration().ReadFrom.Configuration(Configuration).CreateLogger();
             services.Configure<ApiSettings>(Configuration.GetSection("AppSettings"));
             services.AddSingleton(resolver => resolver.GetRequiredService<IOptions<ApiSettings>>().Value);
             services.AddSingleton<ICameraService, CameraService>();

@@ -1,10 +1,10 @@
-﻿var isInceptionTrained = false;
-var raspberryPiUrl;
-var visionUrl;
-var cameraHub;
-var sensorsHub;
-var capture = {};
-var sensors = {};
+﻿let isInceptionTrained = false;
+let raspberryPiUrl;
+let visionUrl;
+let cameraHub;
+let sensorsHub;
+let capture = {};
+let sensors = {};
 
 document.addEventListener('DOMContentLoaded', async (event) => {
 
@@ -184,9 +184,9 @@ function populateSensorsData(data) {
 
 async function getSettings() {
 
-    var url = "api/main/settings";
+    let url = "api/main/settings";
 
-    var result = fetch(url, {
+    let result = fetch(url, {
         method: 'GET',
         mode: 'cors'
     })
@@ -196,7 +196,7 @@ async function getSettings() {
 
 function startInceptionTraining() {
 
-    var url = `${visionUrl}/api/images/train_inception`;
+    let url = `${visionUrl}/api/images/train_inception`;
 
     fetch(url, {
         method: 'GET',

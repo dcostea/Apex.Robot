@@ -17,9 +17,9 @@ namespace Apex.Robot.Vision.API.DeepLearning
 
         public static PredictionEngine<ImageNetData, ImageNetPrediction> Model { get; set; }
 
-        public static PredictionEngine<ImageNetData, ImageNetPrediction> LoadModel(string tsv, string imagesFolder, string inceptionModel, string modelLocation)
+        public static PredictionEngine<ImageNetData, ImageNetPrediction> LoadModel(string modelLocation)
         {
-            var model = mlContext.Model.Load(modelLocation, out var modelSchema);
+            var model = mlContext.Model.Load(modelLocation, out _);
             var predictor = mlContext.Model.CreatePredictionEngine<ImageNetData, ImageNetPrediction>(model);
 
             return predictor;

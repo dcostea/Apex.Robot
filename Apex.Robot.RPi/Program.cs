@@ -8,11 +8,11 @@ namespace Apex.Robot.RPi
         public static void Main(string[] args)
         {
             Log.Logger = new LoggerConfiguration()
-            .MinimumLevel.Override("System", LogEventLevel.Debug)
-            .MinimumLevel.Override("Debug", LogEventLevel.Debug)
-            .Enrich.FromLogContext()
-            .WriteTo.Console()
-            .CreateLogger();
+                .MinimumLevel.Override("System", LogEventLevel.Debug)
+                .MinimumLevel.Override("Debug", LogEventLevel.Debug)
+                .Enrich.FromLogContext()
+                .WriteTo.Console()
+                .CreateLogger();
 
             try
             {

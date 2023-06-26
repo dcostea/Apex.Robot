@@ -20,13 +20,13 @@ namespace Apex.Robot.Vision.API.Controllers
             Log.Debug(_modelSettings.TagsFilePath);
             Log.Debug(_modelSettings.ModelPath);
             Log.Debug(_modelSettings.ModelFilePath);
-            Log.Debug(_modelSettings.ZipFilePath);
+            Log.Debug(_modelSettings.RetrainedModelFilePath);
         }
 
         [HttpGet("train_inception")]
         public IActionResult ReTrainInception()
         {
-            Inception.Model = Inception.LoadAndScoreModel(_modelSettings.TagsFilePath, _modelSettings.ModelPath, _modelSettings.ModelFilePath, _modelSettings.ZipFilePath);
+            Inception.Model = Inception.LoadAndScoreModel(_modelSettings.TagsFilePath, _modelSettings.ModelPath, _modelSettings.ModelFilePath, _modelSettings.RetrainedModelFilePath);
             Log.Debug("inception re-trained");
 
             return Ok("inception re-trained");
@@ -51,7 +51,7 @@ namespace Apex.Robot.Vision.API.Controllers
                     Label = Path.GetFileNameWithoutExtension(_modelSettings.TestImageFilePath)
                 };
 
-                Inception.Model ??= Inception.LoadModel(_modelSettings.TagsFilePath, _modelSettings.ModelPath, _modelSettings.ModelFilePath, _modelSettings.ZipFilePath);
+                Inception.Model ??= Inception.LoadModel(_modelSettings.RetrainedModelFilePath);
 
                 var prediction = Inception.Model.Predict(imageData);
                 Log.Debug($"prediction: {prediction.PredictedLabelValue}");
