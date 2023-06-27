@@ -1,6 +1,6 @@
 ﻿namespace Apex.Robot.Vision.API.Helpers
 {
-    public class PathHelper
+    public static class PathHelper
     {
         internal static string GetAbsolutePath(string relativePath)
         {

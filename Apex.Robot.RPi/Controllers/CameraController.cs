@@ -8,22 +8,20 @@ namespace Apex.Robot.RPi.Controllers
     [ApiController]
     public class CameraController : ControllerBase
     {
-        private static uint _imageWidth;
-        private static uint _imageHeight;
+        private readonly ApiSettings _settings;
 
         private readonly ICameraService _service;
 
         public CameraController(ApiSettings settings, ICameraService service)
         {
             _service = service;
-            _imageWidth = settings.ImageWidth;
-            _imageHeight = settings.ImageHeight;
+            _settings = settings;
         }
 
         [HttpGet("capture")]
         public IActionResult Capture()
         {
-            var image = _service.GetImage(_imageWidth, _imageHeight);
+            var image = _service.GetImage(_settings.ImageWidth, _settings.ImageHeight);
             
             return Ok(image);
         }

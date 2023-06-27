@@ -2,9 +2,9 @@ using Apex.Robot.RPi.Hubs;
 using Apex.Robot.RPi.Interfaces;
 using Apex.Robot.RPi.Models;
 using Apex.Robot.RPi.Services;
+using Microsoft.Extensions.ML;
 using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
-using Serilog;
 
 namespace Apex.Robot.RPi
 {
@@ -17,16 +17,17 @@ namespace Apex.Robot.RPi
 
         public IConfiguration Configuration { get; }
 
-        // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            //Log.Logger = new LoggerConfiguration().ReadFrom.Configuration(Configuration).CreateLogger();
             services.Configure<ApiSettings>(Configuration.GetSection("AppSettings"));
             services.AddSingleton(resolver => resolver.GetRequiredService<IOptions<ApiSettings>>().Value);
             services.AddSingleton<ICameraService, CameraService>();
             services.AddSingleton<ISensorsService, SensorsService>();
             services.AddSingleton<IMotorsService, MotorsService>();
             services.AddSingleton<IPredictionsService, PredictionsService>();
+
+            services.AddPredictionEnginePool<ModelInput, ModelOutput>()
+               .FromFile(modelName: "sensorsModel", filePath: Configuration.GetValue<string>("AppSettings:ModelFilePath"), watchForChanges: true);
 
             services.AddControllers();
             services.AddSwaggerGen(c =>
@@ -37,7 +38,6 @@ namespace Apex.Robot.RPi
             services.AddSignalR();
         }
 
-        // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
             if (env.IsDevelopment())

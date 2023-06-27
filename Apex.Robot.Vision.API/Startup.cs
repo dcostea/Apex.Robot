@@ -1,4 +1,5 @@
 ﻿using Apex.Robot.Vision.API.Models;
+using Microsoft.Extensions.ML;
 using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
 using System.Text.Json.Serialization;
@@ -14,7 +15,6 @@ namespace Apex.Robot.Vision
 
         public IConfiguration Configuration { get; }
 
-        // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddControllers().AddJsonOptions(options =>
@@ -25,6 +25,9 @@ namespace Apex.Robot.Vision
             services.AddSingleton(resolver => resolver.GetRequiredService<IOptions<ImageSettings>>().Value);
             services.AddSingleton(resolver => resolver.GetRequiredService<IOptions<ModelSettings>>().Value);
 
+            //services.AddPredictionEnginePool<ImageNetData, ImageNetPrediction>()
+            //    .FromFile(modelName: "imagePrediction", filePath: Configuration.GetValue<string>("ModelSettings:RetrainedModelFilePath"), watchForChanges: false);
+
             services.AddControllers();
             services.AddSwaggerGen(c =>
             {
@@ -34,7 +37,6 @@ namespace Apex.Robot.Vision
             services.AddCors();
         }
 
-        // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
             if (env.IsDevelopment())
@@ -44,12 +46,10 @@ namespace Apex.Robot.Vision
             app.UseSwagger();
             app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "Apex.Robot.Vision API v1"));
 
-            //app.UseHttpsRedirection();
-
-            app.UseCors(builder => builder.WithOrigins("http://localhost:5555", "http://localhost:5050", "http://192.168.178.21:5050", "http://172.20.10.12:5050")
+            app.UseCors(builder => builder
+                .AllowAnyOrigin()
                 .AllowAnyHeader()
-                .AllowAnyMethod()
-                .AllowCredentials());
+                .AllowAnyMethod());
 
             app.UseFileServer();
 

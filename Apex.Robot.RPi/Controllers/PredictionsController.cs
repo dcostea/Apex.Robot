@@ -31,7 +31,7 @@ public class PredictionsController : ControllerBase
         return Ok(prediction);
     }
 
-    [HttpGet("trainandpredict")]
+    [HttpGet("train_predict")]
     public IActionResult TrainAndPredict()
     {
         var prediction = _service.TrainAndPredict();

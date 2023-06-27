@@ -2,9 +2,7 @@
 using Apex.Robot.RPi.Models;
 using Microsoft.AspNetCore.SignalR;
 using Serilog;
-using System;
 using System.Threading.Channels;
-using System.Threading.Tasks;
 
 namespace Apex.Robot.RPi.Hubs
 {
@@ -17,7 +15,7 @@ namespace Apex.Robot.RPi.Hubs
         private DateTime _sleepTo;
         private static bool _isStreaming;
         private readonly ApiSettings _settings;
-        public static string IsAlarm { get; set; }
+        public static bool IsAlarm { get; set; }
 
         public SensorsHub(
             ISensorsService sensorsService, 
@@ -37,17 +35,21 @@ namespace Apex.Robot.RPi.Hubs
         public async Task StartSensorsStreaming()
         {
             _isStreaming = true;
+            Log.Debug($"_isStreaming: {_isStreaming}");
             await Clients.All.SendAsync("sensorsStreamingStarted", "started...");
         }
 
         public async Task StopSensorsStreaming()
         {
             _isStreaming = false;
+            Log.Debug($"_isStreaming: {_isStreaming}");
             await Clients.All.SendAsync("sensorsStreamingStopped");
         }
 
         public ChannelReader<ModelInput> SensorsCaptureLoop()
         {
+            Log.Debug($"_isStreaming: {_isStreaming}");
+            Log.Debug($"reading sensors loop...");
             var channel = Channel.CreateUnbounded<ModelInput>();
             _ = WriteToChannel(channel.Writer);
             return channel.Reader;
@@ -75,19 +77,25 @@ namespace Apex.Robot.RPi.Hubs
                             CreatedAt = createdAt
                         };
 
+                        Log.Debug(reading.ToString());
+
                         var prediction = _predictionsService.Predict(reading);
                         reading.IsAlarm = prediction.Prediction;
+                        Log.Debug($"Sensors say is alarm: {reading.IsAlarm}");
 
                         var inceptionPrediction = await _cameraService.GetInceptionPrediction("capture.jpg");
+                        Log.Debug($"Image says is alarm: {inceptionPrediction.Equals("Lighter")}");
 
-                        if (reading.IsAlarm && inceptionPrediction.Equals("Lighter")) 
+                        IsAlarm = reading.IsAlarm && inceptionPrediction.Equals("Lighter");
+
+                        if (IsAlarm) 
                         {
                             _motorsService.RunAway(_sleepTo);
-                            _sleepTo = DateTime.Now.AddSeconds(3);
+                            _sleepTo = DateTime.Now.AddSeconds(5);
                         }
 
                         await writer.WriteAsync(reading);
-                        await Clients.All.SendAsync("sensorsDataCaptured", $"{luminosity}, {humidity}, {temperature}, {infrared}, {distance}, {createdAt}, {IsAlarm}");
+                        await Clients.All.SendAsync("sensorsDataCaptured", reading);
 
                         await Task.Delay(_settings.ReadingDelay);
                     }

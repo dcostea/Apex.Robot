@@ -119,18 +119,18 @@ function getPredictionBySensors(data) {
 </li>
 */
 
-function populateDatasets(data) {
+////function populateDatasets(data) {
 
-    let html = "";
-    for (let file of data) {
-        html += '<li class="list-group-item d-flex justify-content-between align-items-center">';
-        html += `<input class="form-check-input mr-1" type="checkbox" checked value="" aria-label="...">`;
-        html += `${file.fileName}`;
-        html += `<span class="badge bg-primary rounded-pill">${file.rowsCount}</span>`;
-    }
+////    let html = "";
+////    for (let file of data) {
+////        html += '<li class="list-group-item d-flex justify-content-between align-items-center">';
+////        html += `<input class="form-check-input mr-1" type="checkbox" checked value="" aria-label="...">`;
+////        html += `${file.fileName}`;
+////        html += `<span class="badge bg-primary rounded-pill">${file.rowsCount}</span>`;
+////    }
 
-    document.querySelector("#datasets").innerHTML = html;
-}
+////    document.querySelector("#datasets").innerHTML = html;
+////}
 
 function clearList() {
     document.querySelector("#datasets").innerHTML = "";

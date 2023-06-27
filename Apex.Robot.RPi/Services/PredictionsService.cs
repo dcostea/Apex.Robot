@@ -1,5 +1,6 @@
 ﻿using Apex.Robot.RPi.Interfaces;
 using Apex.Robot.RPi.Models;
+using Microsoft.Extensions.ML;
 using Microsoft.ML;
 using Microsoft.ML.Trainers.FastTree;
 using Serilog;
@@ -10,9 +11,11 @@ namespace Apex.Robot.RPi.Services
     {
         private readonly MLContext mlContext;
         private readonly ApiSettings _settings;
+        private readonly PredictionEnginePool<ModelInput, ModelOutput> _predictionEngine;
 
-        public PredictionsService(ApiSettings settings)
+        public PredictionsService(PredictionEnginePool<ModelInput, ModelOutput> predictionEngine, ApiSettings settings)
         {
+            _predictionEngine = predictionEngine;
             _settings = settings;
 
             mlContext = new MLContext(seed: 1);
@@ -29,22 +32,17 @@ namespace Apex.Robot.RPi.Services
             var shuffledData = mlContext.Data.ShuffleRows(data, seed: 1);
             var split = mlContext.Data.TrainTestSplit(shuffledData, testFraction: 0.3);
             var trainingData = split.TrainSet;
-            var testingData = split.TestSet;
 
-            //TODO add luminosity and retrain
-            var featureColumns = new[] { "Luminosity", "Temperature", "Humidity", "Infrared", "Distance" };
+            var featureColumns = new[] { "Luminosity", "Temperature", "Infrared" };
 
             var trainingPipeline = mlContext.Transforms.ReplaceMissingValues(new[]
-            {
+{
                 new InputOutputColumnPair(@"Luminosity", @"Luminosity"),
                 new InputOutputColumnPair(@"Temperature", @"Temperature"),
-                new InputOutputColumnPair(@"Humidity", @"Humidity"),
                 new InputOutputColumnPair(@"Infrared", @"Infrared"),
-                new InputOutputColumnPair(@"Distance", @"Distance")
             })
-                .Append(mlContext.Transforms.Text.FeaturizeText(@"CreatedAt", @"CreatedAt"))
-                .Append(mlContext.Transforms.Concatenate(@"Features", new[] { @"Luminosity", @"Temperature", @"Humidity", @"Infrared", @"Distance", @"CreatedAt" }))
-                .Append(mlContext.BinaryClassification.Trainers.FastTree(new FastTreeBinaryTrainer.Options() { NumberOfLeaves = 5, MinimumExampleCountPerLeaf = 21, NumberOfTrees = 4, MaximumBinCountPerFeature = 248, LearningRate = 0.0327903143558005F, FeatureFraction = 0.913244540244145F, LabelColumnName = @"IsAlarm", FeatureColumnName = @"Features" }));
+                .Append(mlContext.Transforms.Concatenate(@"Features", featureColumns))
+                .Append(mlContext.BinaryClassification.Trainers.FastTree(new FastTreeBinaryTrainer.Options() { LabelColumnName = @"IsAlarm", FeatureColumnName = @"Features" }));
 
             var model = trainingPipeline.Fit(trainingData);
 
@@ -52,16 +50,13 @@ namespace Apex.Robot.RPi.Services
             {
                 Luminosity = 10F,
                 Temperature = 32F,
-                Humidity = 22F,
-                Infrared = 1F,
-                Distance = 20F,
-                CreatedAt = "01/03/2020 10:22:08"
+                Infrared = 1F
             };
 
             var predictor = mlContext.Model.CreatePredictionEngine<ModelInput, ModelOutput>(model);
             var predicted = predictor.Predict(sampleData);
 
-            Log.Debug($"[PREDICT] IsAlarm: {predicted.Prediction}");
+            Log.Debug($"[PREDICT] IsAlarm: {predicted.Prediction} ({predicted.Probability:P2})");
 
             return predicted;
         }
@@ -77,39 +72,32 @@ namespace Apex.Robot.RPi.Services
             var shuffledData = mlContext.Data.ShuffleRows(data, seed: 1);
             var split = mlContext.Data.TrainTestSplit(shuffledData, testFraction: 0.3);
             var trainingData = split.TrainSet;
-            var testingData = split.TestSet;
 
-            //TODO use featureColumns or not
-            var featureColumns = new[] { "Luminosity", "Temperature", "Humidity", "Infrared", "Distance" };
+            var featureColumns = new[] { "Luminosity", "Temperature", "Infrared" };
 
             var trainingPipeline = mlContext.Transforms.ReplaceMissingValues(new[] 
             {
                 new InputOutputColumnPair(@"Luminosity", @"Luminosity"),
                 new InputOutputColumnPair(@"Temperature", @"Temperature"), 
-                new InputOutputColumnPair(@"Humidity", @"Humidity"), 
                 new InputOutputColumnPair(@"Infrared", @"Infrared"), 
-                new InputOutputColumnPair(@"Distance", @"Distance") 
             })
-                .Append(mlContext.Transforms.Text.FeaturizeText(@"CreatedAt", @"CreatedAt"))
-                .Append(mlContext.Transforms.Concatenate(@"Features", new[] { @"Luminosity", @"Temperature", @"Humidity", @"Infrared", @"Distance", @"CreatedAt" }))
-                .Append(mlContext.BinaryClassification.Trainers.FastTree(new FastTreeBinaryTrainer.Options() { NumberOfLeaves = 5, MinimumExampleCountPerLeaf = 21, NumberOfTrees = 4, MaximumBinCountPerFeature = 248, LearningRate = 0.0327903143558005F, FeatureFraction = 0.913244540244145F, LabelColumnName = @"IsAlarm", FeatureColumnName = @"Features" }));
+                .Append(mlContext.Transforms.Concatenate(@"Features", featureColumns))
+                .Append(mlContext.BinaryClassification.Trainers.FastTree(new FastTreeBinaryTrainer.Options() { LabelColumnName = @"IsAlarm", FeatureColumnName = @"Features" }));
 
             var model = trainingPipeline.Fit(trainingData);
 
-            mlContext.Model.Save(model, trainingData.Schema, "model.zip");
+            mlContext.Model.Save(model, trainingData.Schema, _settings.ModelFilePath);
+
+            Log.Debug($"[TRAIN] model {_settings.ModelFilePath} trained and saved");
         }
 
         public ModelOutput Predict(ModelInput reading)
         {
-            //TODO use Path.GetFullPath??
-            var model = mlContext.Model.Load("model.zip", out var _);
-
-            //TODO use predictionenginepool here!!!!
-            var predictor = mlContext.Model.CreatePredictionEngine<ModelInput, ModelOutput>(model);
-            var predicted = predictor.Predict(reading);
+            var predictionEngine = _predictionEngine.GetPredictionEngine("sensorsModel");
+            var predicted = predictionEngine.Predict(reading);
 
             Log.Debug($"[SENSORS] {reading}");
-            Log.Debug($"[PREDICT] IsAlarm: {predicted.Prediction}");
+            Log.Debug($"[PREDICT] IsAlarm: {predicted.Prediction} ({predicted.Probability:P2})");
 
             return predicted;
         }

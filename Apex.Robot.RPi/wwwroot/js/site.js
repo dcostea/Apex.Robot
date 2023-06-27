@@ -88,7 +88,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     });
 
     sensorsConnection.on("sensorsDataCaptured", function (data) {
-        console.log(`sensors data captured, ${data}`);
+        console.log(`sensors data captured (is alarm: ${data.isAlarm})`);
     });
 
     sensorsConnection.on("sensorsDataNotCaptured", function () {
@@ -100,19 +100,19 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     ////// EVENTS ///////////////////////////////////////////////
 
     document.querySelector("#start").onclick = function () {
-        if (cameraConnection.connectionState == 0) {
-            console.log("device (camera) is not connected.");
-        } else {
+        if (cameraConnection.connection.connectionState == 1) {
             cameraConnection.invoke("StartCameraStreaming");
-        }
-
-        if (sensorsConnection.connectionState == 0) {
-            console.log("device (sensors) is not connected.");
         } else {
-            sensorsConnection.invoke("StartSensorsStreaming");
+            console.log("device (camera) is not connected.");
         }
 
-        if (sensorsConnection.connectionState == 1 && cameraConnection.connectionState == 1)
+        if (sensorsConnection.connection.connectionState == 1) {
+            sensorsConnection.invoke("StartSensorsStreaming");
+        } else {
+            console.log("device (sensors) is not connected.");
+        }
+
+        if (sensorsConnection.connection.connectionState == 1 && cameraConnection.connection.connectionState == 1)
         {
             document.querySelector("#start").style.display = "none";
             document.querySelector("#stop").style.display = "block";
@@ -120,19 +120,19 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     }
 
     document.querySelector("#stop").onclick = function () {
-        if (cameraConnection.connectionState == 0) {
+        if (cameraConnection.connection.connectionState == 0) {
             console.log("device (camera) is not connected.");
         } else {
             cameraConnection.invoke("StopCameraStreaming");
         }
 
-        if (sensorsConnection.connectionState == 0) {
+        if (sensorsConnection.connection.connectionState == 0) {
             console.log("device (sensors) is not connected.");
         } else {
             sensorsConnection.invoke("StopSensorsStreaming");
         }
 
-        if (sensorsConnection.connectionState == 1 && cameraConnection.connectionState == 1) {
+        if (sensorsConnection.connection.connectionState == 1 && cameraConnection.connection.connectionState == 1) {
             document.querySelector("#start").style.display = "block";
             document.querySelector("#stop").style.display = "none";
         }
@@ -179,6 +179,12 @@ function populateSensorsData(data) {
         if (data.createdAt !== undefined) {
             sensors.createdAt = data.createdAt;
         }
+        if (data.isAlarm !== undefined) {
+            sensors.isAlarm = data.isAlarm;
+            document.querySelector("#sensors_prediction").innerHTML = `${data.isAlarm === true ? "ALARM!" : "Not Alarm"}`;
+        }
+
+        console.log(`Is alarm: ${data.isAlarm}`);
     }
 }
 
@@ -228,8 +234,7 @@ function getPredictionByImage(image) {
         .then((response) => response.json())
         .then(function (data) {
             if (data !== undefined) {
-                console.log(data);
-                //TODO here source may be isAlarm or simply not needed
+                console.log(`Class: ${data}`);
                 capture.source = data;
                 document.querySelector("#prediction").innerHTML = data;
             }

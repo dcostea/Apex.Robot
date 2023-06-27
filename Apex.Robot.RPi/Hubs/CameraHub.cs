@@ -1,10 +1,7 @@
-﻿using System;
-using Apex.Robot.RPi.Interfaces;
+﻿using Apex.Robot.RPi.Interfaces;
 using Apex.Robot.RPi.Models;
 using Microsoft.AspNetCore.SignalR;
 using System.Threading.Channels;
-using System.Threading.Tasks;
-using Serilog;
 
 namespace Apex.Robot.RPi.Hubs
 {
@@ -12,14 +9,10 @@ namespace Apex.Robot.RPi.Hubs
     {
         private readonly ICameraService _cameraService;
         private static bool _isStreaming;
-        private static uint _imageWidth;
-        private static uint _imageHeight;
         private readonly ApiSettings _settings;
 
         public CameraHub(ICameraService cameraService, ApiSettings settings)
         {
-            _imageWidth = settings.ImageWidth;
-            _imageHeight = settings.ImageHeight;
             _cameraService = cameraService;
             _settings = settings;
         }
@@ -49,7 +42,7 @@ namespace Apex.Robot.RPi.Hubs
                     byte[] image;
                     try
                     {
-                        image = _cameraService.GetImage(_imageWidth, _imageHeight);
+                        image = _cameraService.GetImage(_settings.ImageWidth, _settings.ImageHeight);
                         var capture = new Capture
                         {
                             Image = image,
